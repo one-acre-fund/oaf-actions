@@ -1,0 +1,49 @@
+name: Trigger Jenkins Job
+description: GitHub Action for triggering a Jenkins job
+
+# Define inputs for the Action
+inputs:
+  JENKINS_JOB_URL:
+    description: 'The URL of the Jenkins job to trigger.'
+    required: true
+  JENKINS_USERNAME:
+    description: 'The username to authenticate with Jenkins.'
+    required: true
+  JENKINS_API_TOKEN:
+    description: 'The API token for Jenkins authentication.'
+    required: true
+  JENKINS_AUTHENTICATION_TOKEN:
+    description: 'The authentication token for triggering the Jenkins job.'
+    required: false
+  WAIT_FOR_RESPONSE:
+    description: 'Whether to wait for Jenkins job to complete.'
+    required: false
+    default: 'true'
+  WAIT_TIMEOUT:
+    description: 'Timeout in minutes for waiting for Jenkins job to complete.'
+    required: false
+    default: '15'
+  POSTGRES_DATABASE_HOST:
+    description: 'Host of the PostgreSQL server.'
+    required: true
+  POSTGRES_DATABASE_USER:
+    description: 'PostgreSQL user for the Jenkins job.'
+    required: true
+  POSTGRES_DATABASE_PASSWORD:
+    description: 'PostgreSQL password for the Jenkins job.'
+    required: true
+  DATABASES_TO_BACKUP:
+    description: 'Comma-separated list of databases to back up.'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Trigger Jenkins Job
+      run: |
+        curl -X POST "${{ inputs.JENKINS_JOB_URL }}/buildWithParameters?token=${{ inputs.JENKINS_AUTHENTICATION_TOKEN }}" \
+          --user "${{ inputs.JENKINS_USERNAME }}:${{ inputs.JENKINS_API_TOKEN }}" \
+          --data-urlencode "POSTGRES_DATABASE_HOST=${{ inputs.POSTGRES_DATABASE_HOST }}" \
+          --data-urlencode "POSTGRES_DATABASE_USER=${{ inputs.POSTGRES_DATABASE_USER }}" \
+          --data-urlencode "POSTGRES_DATABASE_PASSWORD=${{ inputs.POSTGRES_DATABASE_PASSWORD }}" \
+          --data-urlencode "DATABASES_TO_BACKUP=${{ inputs.DATABASES_TO_BACKUP }}"
