@@ -88,9 +88,9 @@ runs:
 
   - name: Deploy PostgreSQL
     run: |-
-      if helm status ${{ inputs.RELEASE_NAME }} -n ${{ inputs.NAMESPACE }} | grep -q "STATUS: deployed"; then
-        echo "Release ${{ inputs.RELEASE_NAME }} already exists. Skipping deployment."
-        exit 0
+      RELEASE_EXISTS=$(helm list -n ${{ inputs.NAMESPACE }} -q | grep -w ${{ inputs.RELEASE_NAME }})
+      if [ -n "$RELEASE_EXISTS" ]; then
+        echo "Release ${{ inputs.RELEASE_NAME }} already exists."
       else
         echo "Release ${{ inputs.RELEASE_NAME }} does not exist. Proceeding with deployment."
         helm repo add bitnami https://charts.bitnami.com/bitnami
