@@ -1,4 +1,4 @@
-name: Trigger Jenkins Job
+name: Trigger Jenkins Job for PostgreSQL Database Backup
 description: GitHub Action for triggering a Jenkins job to back up a PostgreSQL database.
 
 # Define inputs for the Action
@@ -15,7 +15,7 @@ inputs:
     description: 'The username to authenticate with Jenkins.'
     required: true
   JENKINS_TOKEN:
-    description: 'The API token for Jenkins authentication.'
+    description: 'The PAT (Personal Access Token) to authenticate with Jenkins.'
     required: true
   POSTGRES_DATABASE_HOST:
     description: 'Host of the PostgreSQL server.'
