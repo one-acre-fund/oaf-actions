@@ -1,5 +1,5 @@
 name: Setup Helm Environment
-description: GitHub Action for seting up the artifact, helm and kubectl.
+description: A GitHub Action for configuring and preparing the environment to deploy Helm charts. This action sets up necessary artifacts, installs Helm and kubectl, and configures the Kubernetes context for deployment.
 inputs:
   GH_PAT:
     description: The token required to download the artifact.
