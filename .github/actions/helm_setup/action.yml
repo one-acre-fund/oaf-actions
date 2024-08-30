@@ -1,4 +1,4 @@
-name: Helm Setup Environment
+name: Setup Helm Environment
 description: GitHub Action for seting up the artifact, helm and kubectl.
 inputs:
   GH_PAT:
