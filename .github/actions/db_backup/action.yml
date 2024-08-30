@@ -1,28 +1,22 @@
 name: Trigger Jenkins Job
-description: GitHub Action for triggering a Jenkins job
+description: GitHub Action for triggering a Jenkins job to back up a PostgreSQL database.
 
 # Define inputs for the Action
 inputs:
-  JENKINS_JOB_URL:
+  JENKINS_URL:
     description: 'The URL of the Jenkins job to trigger.'
+    default: 'https://jenkins.oneacrefund.org/'
+    required: true
+  JENKINS_JOB_NAME:
+    description: 'The name of the Jenkins job to trigger.'
+    default: 'Database Jobs/Backup Postgres Database Manual'
     required: true
   JENKINS_USERNAME:
     description: 'The username to authenticate with Jenkins.'
     required: true
-  JENKINS_API_TOKEN:
+  JENKINS_TOKEN:
     description: 'The API token for Jenkins authentication.'
     required: true
-  JENKINS_AUTHENTICATION_TOKEN:
-    description: 'The authentication token for triggering the Jenkins job.'
-    required: false
-  WAIT_FOR_RESPONSE:
-    description: 'Whether to wait for Jenkins job to complete.'
-    required: false
-    default: 'true'
-  WAIT_TIMEOUT:
-    description: 'Timeout in minutes for waiting for Jenkins job to complete.'
-    required: false
-    default: '15'
   POSTGRES_DATABASE_HOST:
     description: 'Host of the PostgreSQL server.'
     required: true
@@ -32,18 +26,31 @@ inputs:
   POSTGRES_DATABASE_PASSWORD:
     description: 'PostgreSQL password for the Jenkins job.'
     required: true
-  DATABASES_TO_BACKUP:
+  DATABASES:
     description: 'Comma-separated list of databases to back up.'
     required: true
+  WAIT_TIMEOUT:
+    description: 'Timeout in minutes for waiting for Jenkins job to complete.'
+    required: false
+    default: '3600'
 
 runs:
   using: "composite"
   steps:
-    - name: Trigger Jenkins Job
-      run: |
-        curl -X POST "${{ inputs.JENKINS_JOB_URL }}/buildWithParameters?token=${{ inputs.JENKINS_AUTHENTICATION_TOKEN }}" \
-          --user "${{ inputs.JENKINS_USERNAME }}:${{ inputs.JENKINS_API_TOKEN }}" \
-          --data-urlencode "POSTGRES_DATABASE_HOST=${{ inputs.POSTGRES_DATABASE_HOST }}" \
-          --data-urlencode "POSTGRES_DATABASE_USER=${{ inputs.POSTGRES_DATABASE_USER }}" \
-          --data-urlencode "POSTGRES_DATABASE_PASSWORD=${{ inputs.POSTGRES_DATABASE_PASSWORD }}" \
-          --data-urlencode "DATABASES_TO_BACKUP=${{ inputs.DATABASES_TO_BACKUP }}"
+    - name: Trigger Manual Backup of PostgreSQL Database
+      uses: toptal/jenkins-job-trigger-action@master
+      with:
+        jenkins_url: "${{ inputs.JENKINS_URL }}"
+        jenkins_user: "${{ inputs.JENKINS_USERNAME }}"
+        jenkins_token: "${{ inputs.JENKINS_TOKEN }}"
+        job_name: "${{ inputs.JENKINS_JOB_NAME }}"
+        job_params: |
+          {
+            "HOST": ${{ inputs.POSTGRES_DATABASE_HOST }},
+            "POSTGRES_USER": ${{ inputs.POSTGRES_DATABASE_USER }},
+            "POSTGRES_PASSWORD": ${{ inputs.POSTGRES_DATABASE_PASSWORD }},
+            "DATABASES": ${{ inputs.DATABASES }},
+            "REMOTE_BUILD_USER": "Remotely triggered (IT Devs)"
+          }
+        job_timeout: "${{ inputs.WAIT_TIMEOUT }}"
+
