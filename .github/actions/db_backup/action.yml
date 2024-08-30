@@ -1,5 +1,5 @@
 name: Trigger Jenkins Job for PostgreSQL Database Backup
-description: GitHub Action for triggering a Jenkins job to back up a PostgreSQL database.
+description: A GitHub Action to automate the triggering of a Jenkins job for backing up PostgreSQL databases. This action initiates the backup process by interacting with Jenkins, using provided credentials and database details.
 
 # Define inputs for the Action
 inputs:
