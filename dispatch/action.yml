@@ -42,4 +42,4 @@ runs:
           -H "Authorization: Bearer ${{ inputs.TOKEN }}" \
           -H "X-GitHub-Api-Version: ${{ inputs.API_VERSION }}" \
           https://api.github.com/repos/${{ inputs.OWNER }}/${{ inputs.DISPATCH_REPO }}/actions/workflows/deploy.yml/dispatches \
-          -d '{"ref":"main","inputs":{"run_id":"${{ inputs.RUN_ID }}","ref":"${{ inputs.REF }}",ref_name:"${{ inputs.REF_NAME }}","sha":"${{ inputs.SHA }}","repository":"${{ inputs.REPOSITORY }}"}}'
+          -d '{"ref":"main","inputs":{"run_id":"${{ inputs.RUN_ID }}","ref":"${{ inputs.REF }}","ref_name":"${{ inputs.REF_NAME }}","sha":"${{ inputs.SHA }}","repository":"${{ inputs.REPOSITORY }}"}}'
