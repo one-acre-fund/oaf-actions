@@ -36,7 +36,7 @@ runs:
     - name: Dispatch deployment event
       shell: bash
       run: |
-        curl -L \
+        curl -L -s -o /dev/null -w "%{http_code}" \
           -X POST \
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: Bearer ${{ inputs.TOKEN }}" \
