@@ -19,10 +19,10 @@ inputs:
   OWNER:
     description: The owner of the repository to dispatch the workflow to.
     required: true
-  REPOSITORY:
+  CI_REPOSITORY:
     description: The name of the repository to dispatch the workflow from.
     required: true
-  DISPATCH_REPO:
+  CD_REPOSITORY:
     description: The name of the repository to dispatch the workflow to.
     required: true
   API_VERSION:
@@ -41,5 +41,5 @@ runs:
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: Bearer ${{ inputs.TOKEN }}" \
           -H "X-GitHub-Api-Version: ${{ inputs.API_VERSION }}" \
-          https://api.github.com/repos/${{ inputs.OWNER }}/${{ inputs.DISPATCH_REPO }}/actions/workflows/deploy.yml/dispatches \
-          -d '{"ref":"main","inputs":{"run_id":"${{ inputs.RUN_ID }}","ref":"${{ inputs.REF }}","ref_name":"${{ inputs.REF_NAME }}","sha":"${{ inputs.SHA }}","repository":"${{ inputs.REPOSITORY }}"}}'
+          https://api.github.com/repos/${{ inputs.OWNER }}/${{ inputs.CD_REPOSITORY }}/actions/workflows/deploy.yml/dispatches \
+          -d '{"ref":"main","inputs":{"run_id":"${{ inputs.RUN_ID }}","ref":"${{ inputs.REF }}","ref_name":"${{ inputs.REF_NAME }}","sha":"${{ inputs.SHA }}","repository":"${{ inputs.CI_REPOSITORY }}"}}'
