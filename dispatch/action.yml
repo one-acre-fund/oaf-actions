@@ -34,12 +34,46 @@ runs:
   using: composite
   steps:
     - name: Dispatch deployment event
-      shell: bash
       run: |
-        curl -L -s -o /dev/null -w "%{http_code}" \
+        # Displaying the starting message
+        echo "Starting to trigger GitHub Actions workflow..."
+
+        # Define the URL and payload
+        URL="https://api.github.com/repos/${{ inputs.OWNER }}/${{ inputs.CD_REPOSITORY }}/actions/workflows/deploy.yml/dispatches"
+        PAYLOAD=$(cat <<EOF
+        {
+          "ref": "main",
+          "inputs": {
+            "run_id": "${{ inputs.RUN_ID }}",
+            "ref": "${{ inputs.REF }}",
+            "ref_name": "${{ inputs.REF_NAME }}",
+            "sha": "${{ inputs.SHA }}",
+            "repository": "${{ inputs.CI_REPOSITORY }}"
+          }
+        }
+        EOF
+        )
+
+        # Displaying the URL and Payload
+        echo "GitHub API URL: $URL"
+        echo "Payload: $PAYLOAD"
+
+        # Triggering the GitHub Actions workflow
+        HTTP_CODE=$(curl -L -s -o /dev/null -w "%{http_code}" \
           -X POST \
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: Bearer ${{ inputs.TOKEN }}" \
           -H "X-GitHub-Api-Version: ${{ inputs.API_VERSION }}" \
-          https://api.github.com/repos/${{ inputs.OWNER }}/${{ inputs.CD_REPOSITORY }}/actions/workflows/deploy.yml/dispatches \
-          -d '{"ref":"main","inputs":{"run_id":"${{ inputs.RUN_ID }}","ref":"${{ inputs.REF }}","ref_name":"${{ inputs.REF_NAME }}","sha":"${{ inputs.SHA }}","repository":"${{ inputs.CI_REPOSITORY }}"}}'
+          "$URL" \
+          -d "$PAYLOAD")
+
+        # Checking the response code
+        echo "HTTP response code: $HTTP_CODE"
+
+        if [ "$HTTP_CODE" -eq 204 ]; then
+          echo "Successfully triggered the GitHub Actions workflow."
+        else
+          echo "Failed to trigger the GitHub Actions workflow. HTTP code: $HTTP_CODE"
+          exit 1
+        fi
+      shell: bash
