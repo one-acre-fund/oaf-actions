@@ -34,21 +34,28 @@ runs:
   using: composite
   steps:
     - name: Dispatch deployment event
-      if: inputs.REF == 'refs/heads/main' || inputs.REF == 'refs/heads/develop' || contains(inputs.REF, 'refs/heads/release')
+      if: (inputs.REF == 'refs/heads/main' || inputs.REF == 'refs/heads/develop' || contains(inputs.REF, 'refs/heads/release'))
       run: |
         # Get workflow using run id
         echo "Getting the workflow using the run id..."
         WORKFLOW=$(curl -s -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ inputs.TOKEN }}" "https://api.github.com/repos/${{ inputs.OWNER }}/${{ inputs.CI_REPOSITORY }}/actions/runs/${{ inputs.RUN_ID }}")
 
-        # Check if event was triggered by a push
-        echo "Checking if the event was triggered by a push..."
-        if [ "$(echo $WORKFLOW | jq -r '.workflow_run.event') == 'push'" ]; then
-          echo "The event was triggered by a push."
-        else
-          echo "The event was not triggered by a push. Exiting..."
+        # Check if the workflow run exists
+        if [ "$(echo $WORKFLOW | jq -r '.workflow_run.id')" == "null" ]; then
+          echo "The workflow run does not exist. Exiting..."
           exit 0
         fi
-        
+
+        if [ "$(echo $WORKFLOW | jq -r '.workflow_run.event') != 'push'" ]; then
+          echo "The event was not triggered by a push event. Exiting..."
+          exit 0
+        fi
+
+        if [ "$(echo $WORKFLOW | jq -r '.workflow_run.head_branch')" != "${{ inputs.REF_NAME }}" ]; then
+          echo "The branch name provided does not match the workflow run branch name. Exiting..."
+          exit 0
+        fi
+
         # Displaying the starting message
         echo "Starting to trigger GitHub Actions workflow..."
 
