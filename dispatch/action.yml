@@ -36,31 +36,6 @@ runs:
     - name: Dispatch deployment event
       if: (inputs.REF == 'refs/heads/main' || inputs.REF == 'refs/heads/develop' || contains(inputs.REF, 'refs/heads/release'))
       run: |
-        # Get workflow using run id
-        echo "Getting the workflow using the run id..."
-        WORKFLOW=$(curl -s -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ inputs.TOKEN }}" "https://api.github.com/repos/${{ inputs.CI_REPOSITORY }}/actions/runs/${{ inputs.RUN_ID }}")
-
-        echo $WORKFLOW | jq .
-
-        # Check if the workflow run exits
-        if [ "$(echo $WORKFLOW | jq -r '.message')" == "Not Found" ]; then
-          echo "The workflow run id provided does not exist. Exiting..."
-          exit 0
-        fi
-
-        if [ "$(echo $WORKFLOW | jq -r '.event') != 'push'" ]; then
-          echo "The event was not triggered by a push event. Exiting..."
-          exit 0
-        fi
-
-        if [ "$(echo $WORKFLOW | jq -r '.head_branch')" != "${{ inputs.REF_NAME }}" ]; then
-          echo "The branch name provided does not match the workflow run branch name. Exiting..."
-          exit 0
-        fi
-
-        # Displaying the starting message
-        echo "Starting to trigger GitHub Actions workflow..."
-
         # Define the URL and payload
         URL="https://api.github.com/repos/${{ inputs.OWNER }}/${{ inputs.CD_REPOSITORY }}/actions/workflows/deploy.yml/dispatches"
         PAYLOAD=$(cat <<EOF
