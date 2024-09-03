@@ -34,7 +34,7 @@ runs:
   using: composite
   steps:
     - name: Dispatch deployment event
-      if: inputs.REF == 'refs/heads/main' || inputs.REF == 'refs/heads/develop' || inputs.REF == 'refs/heads/release'
+      if: inputs.REF == 'refs/heads/main' || inputs.REF == 'refs/heads/develop' || contains(inputs.REF, 'refs/heads/release')
       run: |
         # Get workflow using run id
         echo "Getting the workflow using the run id..."
