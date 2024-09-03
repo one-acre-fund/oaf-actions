@@ -40,6 +40,8 @@ runs:
         echo "Getting the workflow using the run id..."
         WORKFLOW=$(curl -s -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ inputs.TOKEN }}" "https://api.github.com/repos/${{ inputs.OWNER }}/${{ inputs.CI_REPOSITORY }}/actions/runs/${{ inputs.RUN_ID }}")
 
+        echo $WORKFLOW | jq .
+
         # Check if the workflow run exists
         if [ "$(echo $WORKFLOW | jq -r '.workflow_run.id')" == "null" ]; then
           echo "The workflow run does not exist. Exiting..."
