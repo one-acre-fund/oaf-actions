@@ -16,9 +16,6 @@ inputs:
   SHA:
     description: The commit sha to deploy.
     required: false
-  OWNER:
-    description: The owner of the repository to dispatch the workflow to.
-    required: false
   CI_REPOSITORY:
     description: The name of the repository to dispatch the workflow from.
     required: true
@@ -37,7 +34,7 @@ runs:
       if: (inputs.REF == 'refs/heads/main' || inputs.REF == 'refs/heads/develop' || contains(inputs.REF, 'refs/heads/release'))
       run: |
         # Define the URL and payload
-        URL="https://api.github.com/repos/${{ inputs.OWNER }}/${{ inputs.CD_REPOSITORY }}/actions/workflows/deploy.yml/dispatches"
+        URL="https://api.github.com/repos/${{ inputs.CD_REPOSITORY }}/actions/workflows/deploy.yml/dispatches"
         PAYLOAD=$(cat <<EOF
         {
           "ref": "main",
