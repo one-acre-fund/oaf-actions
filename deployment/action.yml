@@ -1,0 +1,50 @@
+name: Report Deployment Status
+description: GitHub Action to report deployment status to the CI repository.
+inputs:
+  CI_REPOSITORY:
+    description: 'The repository to deploy the CI pipeline to.'
+    required: true
+  REF:
+    description: 'The branch name that was deployed.'
+    required: true
+  CI_DEPLOYMENT_ENVIRONMENT:
+    description: 'The environment to deploy the CI pipeline to.'
+    required: true
+  CD_WORKFLOW_RUN_URL:
+    description: 'The URL of the CD deployment.'
+    required: true
+  REQUIRED_CONTEXTS:
+    description: 'The required contexts for the deployment to be successful.'
+    required: true
+  GITHUB_TOKEN:
+    description: 'The GitHub token to use for the deployment.'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Create GitHub Deployment
+      run: |
+        DEPLOYMENT_PAYLOAD=$(curl -X POST "https://api.github.com/repos/${{ inputs.CI_REPOSITORY }}/deployments" \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: token ${{ inputs.GITHUB_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "ref": "${{ inputs.REF }}",
+            "environment": "${{ inputs.CI_DEPLOYMENT_ENVIRONMENT }}",
+            "description": "Deployment triggered from CD pipeline. CD Deployment URL: ${{ inputs.CD_WORKFLOW_RUN_URL }}",
+            "transient_environment": false,
+            "auto_merge": false,
+            "required_contexts": [${{ inputs.REQUIRED_CONTEXTS }}]
+          }')
+
+        curl -X POST $(echo "$DEPLOYMENT_PAYLOAD" | jq -r .statuses_url) \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: token ${{ inputs.GITHUB_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "state": "success",
+            "description": "Deployment completed successfully in ${{ inputs.CI_DEPLOYMENT_ENVIRONMENT }}.",
+            "log_url": "${{ inputs.CD_WORKFLOW_RUN_URL }}"
+          }' | jq .
+      shell: bash
