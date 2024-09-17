@@ -19,6 +19,10 @@ inputs:
   GITHUB_TOKEN:
     description: 'The GitHub token to use for the deployment.'
     required: true
+  STATE:
+    description: 'The state of the deployment.'
+    required: true
+    default: 'success'
 
 runs:
   using: composite
@@ -43,7 +47,7 @@ runs:
           -H "Authorization: token ${{ inputs.GITHUB_TOKEN }}" \
           -H "Content-Type: application/json" \
           -d '{
-            "state": "success",
+            "state": "${{ inputs.STATE }}",
             "description": "Deployment completed successfully in ${{ inputs.CI_DEPLOYMENT_ENVIRONMENT }}.",
             "log_url": "${{ inputs.CD_WORKFLOW_RUN_URL }}"
           }' | jq .
