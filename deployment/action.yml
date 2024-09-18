@@ -29,6 +29,10 @@ runs:
   steps:
     - name: Create GitHub Deployment
       run: |
+        JOBS_PAYLOAD=$(curl -X GET "${{ inputs.CD_WORKFLOW_RUN_URL }}/jobs" \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: token ${{ inputs.GITHUB_TOKEN }}")
+
         DEPLOYMENT_PAYLOAD=$(curl -X POST "https://api.github.com/repos/${{ inputs.CI_REPOSITORY }}/deployments" \
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: token ${{ inputs.GITHUB_TOKEN }}" \
@@ -36,7 +40,6 @@ runs:
           -d '{
             "ref": "${{ inputs.REF }}",
             "environment": "${{ inputs.CI_DEPLOYMENT_ENVIRONMENT }}",
-            "description": "Deployment triggered from CD pipeline. CD Deployment URL: ${{ inputs.CD_WORKFLOW_RUN_URL }}",
             "transient_environment": false,
             "auto_merge": false,
             "required_contexts": [${{ inputs.REQUIRED_CONTEXTS }}]
@@ -48,7 +51,7 @@ runs:
           -H "Content-Type: application/json" \
           -d '{
             "state": "${{ inputs.STATE }}",
-            "description": "Deployment completed successfully in ${{ inputs.CI_DEPLOYMENT_ENVIRONMENT }}.",
-            "log_url": "${{ inputs.CD_WORKFLOW_RUN_URL }}"
+            "target_url": "${{ inputs.CD_WORKFLOW_RUN_URL }}",
+            "log_url": $(echo "$JOBS_PAYLOAD" | jq -r '.jobs[] | select(.status == "in_progress") | .html_url')
           }' | jq .
       shell: bash
