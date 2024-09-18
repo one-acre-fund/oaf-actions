@@ -57,6 +57,6 @@ runs:
           -d '{
             "state": "${{ inputs.STATE }}",
             "target_url": "${{ inputs.WORKFLOW_RUN_URL }}",
-            "log_url": "${LOG_URL}",
+            "log_url": "'"$LOG_URL"'"
           }' | jq .
       shell: bash
