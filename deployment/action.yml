@@ -7,13 +7,13 @@ inputs:
   REF:
     description: 'The branch name that was deployed.'
     required: true
-  CI_DEPLOYMENT_ENVIRONMENT:
+  DEPLOYMENT_ENVIRONMENT:
     description: 'The environment to deploy the CI pipeline to.'
     required: true
-  CD_WORKFLOW_RUN_URL:
+  WORKFLOW_RUN_URL:
     description: 'The URL of the CD deployment.'
     required: true
-  CD_WORKFLOW_RUN_API_URL:
+  WORKFLOW_RUN_API_URL:
     description: 'The URL of the CD deployment.'
     required: true
   REQUIRED_CONTEXTS:
@@ -33,7 +33,7 @@ runs:
     - name: Create GitHub Deployment
       run: |
         set -x
-        JOBS_PAYLOAD=$(curl -X GET "${{ inputs.CD_WORKFLOW_RUN_API_URL }}/jobs" \
+        JOBS_PAYLOAD=$(curl -X GET "${{ inputs.WORKFLOW_RUN_API_URL }}/jobs" \
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: token ${{ inputs.GITHUB_TOKEN }}")
 
@@ -43,7 +43,7 @@ runs:
           -H "Content-Type: application/json" \
           -d '{
             "ref": "${{ inputs.REF }}",
-            "environment": "${{ inputs.CI_DEPLOYMENT_ENVIRONMENT }}",
+            "environment": "${{ inputs.DEPLOYMENT_ENVIRONMENT }}",
             "transient_environment": false,
             "auto_merge": false,
             "required_contexts": [${{ inputs.REQUIRED_CONTEXTS }}]
@@ -55,7 +55,7 @@ runs:
           -H "Content-Type: application/json" \
           -d '{
             "state": "${{ inputs.STATE }}",
-            "target_url": "${{ inputs.CD_WORKFLOW_RUN_URL }}",
+            "target_url": "${{ inputs.WORKFLOW_RUN_URL }}",
             "log_url": "$(echo "$JOBS_PAYLOAD" | jq -r '.jobs[] | select(.status == "in_progress") | .html_url')"
           }' | jq .
       shell: bash
