@@ -48,7 +48,8 @@ runs:
             "auto_merge": false,
             "required_contexts": [${{ inputs.REQUIRED_CONTEXTS }}]
           }')
-
+        
+        LOG_URL=$(echo $"$JOBS_PAYLOAD" | jq -r '.jobs[] | select(.status == "in_progress") | .html_url')
         curl -X POST $(echo "$DEPLOYMENT_PAYLOAD" | jq -r .statuses_url) \
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: token ${{ inputs.GITHUB_TOKEN }}" \
@@ -56,6 +57,6 @@ runs:
           -d '{
             "state": "${{ inputs.STATE }}",
             "target_url": "${{ inputs.WORKFLOW_RUN_URL }}",
-            "log_url": "$(echo "$JOBS_PAYLOAD" | jq -r '.jobs[] | select(.status == "in_progress") | .html_url')"
+            "log_url": "${LOG_URL}",
           }' | jq .
       shell: bash
