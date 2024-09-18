@@ -53,6 +53,6 @@ runs:
           -d '{
             "state": "${{ inputs.STATE }}",
             "target_url": "${{ inputs.CD_WORKFLOW_RUN_URL }}",
-            "log_url": $(echo "$JOBS_PAYLOAD" | jq -r '.jobs[] | select(.status == "in_progress") | .html_url')
+            "log_url": "$(echo "$JOBS_PAYLOAD" | jq -r '.jobs[] | select(.status == "in_progress") | .html_url')"
           }' | jq .
       shell: bash
