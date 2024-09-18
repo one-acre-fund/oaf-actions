@@ -13,6 +13,9 @@ inputs:
   CD_WORKFLOW_RUN_URL:
     description: 'The URL of the CD deployment.'
     required: true
+  CD_WORKFLOW_RUN_API_URL:
+    description: 'The URL of the CD deployment.'
+    required: true
   REQUIRED_CONTEXTS:
     description: 'The required contexts for the deployment to be successful.'
     required: true
@@ -30,7 +33,7 @@ runs:
     - name: Create GitHub Deployment
       run: |
         set -x
-        JOBS_PAYLOAD=$(curl -X GET "${{ inputs.CD_WORKFLOW_RUN_URL }}/jobs" \
+        JOBS_PAYLOAD=$(curl -X GET "${{ inputs.CD_WORKFLOW_RUN_API_URL }}/jobs" \
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: token ${{ inputs.GITHUB_TOKEN }}")
 
