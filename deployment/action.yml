@@ -32,7 +32,6 @@ runs:
   steps:
     - name: Create GitHub Deployment
       run: |
-        set -x
         JOBS_PAYLOAD=$(curl -X GET "${{ inputs.WORKFLOW_RUN_API_URL }}/jobs" \
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: token ${{ inputs.GITHUB_TOKEN }}")
@@ -58,5 +57,5 @@ runs:
             "state": "${{ inputs.STATE }}",
             "target_url": "${{ inputs.WORKFLOW_RUN_URL }}",
             "log_url": "'"$LOG_URL"'"
-          }' | jq .
+          }' | jq .url
       shell: bash
