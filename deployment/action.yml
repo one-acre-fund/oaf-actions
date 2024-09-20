@@ -32,11 +32,11 @@ runs:
   steps:
     - name: Create GitHub Deployment
       run: |
-        JOBS_PAYLOAD=$(curl -X GET "${{ inputs.WORKFLOW_RUN_API_URL }}/jobs" \
+        JOBS_PAYLOAD=$(curl -s -X GET "${{ inputs.WORKFLOW_RUN_API_URL }}/jobs" \
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: token ${{ inputs.GITHUB_TOKEN }}")
 
-        DEPLOYMENT_PAYLOAD=$(curl -X POST "https://api.github.com/repos/${{ inputs.CI_REPOSITORY }}/deployments" \
+        DEPLOYMENT_PAYLOAD=$(curl -s -X POST "https://api.github.com/repos/${{ inputs.CI_REPOSITORY }}/deployments" \
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: token ${{ inputs.GITHUB_TOKEN }}" \
           -H "Content-Type: application/json" \
@@ -49,7 +49,7 @@ runs:
           }')
         
         LOG_URL=$(echo $"$JOBS_PAYLOAD" | jq -r '.jobs[] | select(.status == "in_progress") | .html_url')
-        curl -X POST $(echo "$DEPLOYMENT_PAYLOAD" | jq -r .statuses_url) \
+        curl -s -X POST $(echo "$DEPLOYMENT_PAYLOAD" | jq -r .statuses_url) \
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: token ${{ inputs.GITHUB_TOKEN }}" \
           -H "Content-Type: application/json" \
