@@ -16,9 +16,6 @@ inputs:
   K8S_SECRET:
     description: The secret used to authenticate to the cluster.
     required: true
-  NAMESPACE:
-    description: The namespace to deploy the odoo-utilities
-    required: true
 
 runs:
   using: composite
@@ -28,26 +25,15 @@ runs:
       with:
         run-id: ${{ inputs.RUN_ID }}
         repository: ${{ inputs.CI_REPOSITORY }}
-        path: "${{ github.workspace }}"
+        path: ${{ github.workspace }}
         github-token: ${{ inputs.GH_PAT }}
 
     - name: Display Structure of Downloaded Files
       shell: bash
       run: ls -R ${{ github.workspace }}
 
-    - name: Install Helm
-      uses: azure/setup-helm@v4.2.0
-      with:
-        version: latest
-
-    - name: Install Kubectl
-      uses: azure/setup-kubectl@v4.0.0
-      with:
-        version: latest
-
     - name: Set Kubernetes Context
-      uses: azure/k8s-set-context@v4.0.0
+      uses: one-acre-fund/oaf-actions/set_context@main
       with:
-        method: service-account
-        k8s-url: ${{ inputs.K8S_URL }}
-        k8s-secret: ${{ inputs.K8S_SECRET }}
+        K8S_URL: ${{ inputs.K8S_URL }}
+        K8S_SECRET: ${{ inputs.K8S_SECRET }}
