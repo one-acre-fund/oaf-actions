@@ -1,0 +1,75 @@
+name: Deploy OIDC Gatekeeper Proxy
+description: Automates the deployment of the Gatekeeper (OpenID Connect) proxy using Helm to manage secure access to upstream services.
+
+inputs:
+  NAMESPACE:
+    description: 'The Kubernetes namespace where the Gatekeeper proxy will be deployed.'
+    required: true
+  RELEASE_NAME:
+    description: 'The Helm release name for the Gatekeeper deployment.'
+    required: true
+  PROXY_CLIENT_SECRET:
+    description: 'Client secret used for authentication with the OpenID Connect provider.'
+    required: true
+  DISCOVER_URL:
+    description: 'The OpenID Connect discovery URL to retrieve the configuration.'
+    required: true
+  CLIENT_ID:
+    description: 'Client ID used for identifying the proxy with the OpenID Connect provider.'
+    required: true
+  UPSTREAM_URL:
+    description: 'The URL of the upstream service that the proxy will protect.'
+    required: true
+  PROXY_ENCRYPTION_KEY:
+    description: 'Encryption key used to secure sensitive data within the proxy.'
+    required: true
+  PROXY_REDIRECTION_URL:
+    description: 'URL to redirect unauthenticated users after successful authentication.'
+    required: true
+  ROLE:
+    description: 'The role required for accessing the upstream service through the proxy.'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Create values.yaml
+      run: |
+        cat <<EOF > ${{ github.workspace }}/gatekeeper-values.yaml
+        config:
+          client-secret: "${{ inputs.PROXY_CLIENT_SECRET }}"
+          discovery-url: "${{ inputs.DISCOVER_URL }}"
+          secure-cookie: false
+          client-id: "${{ inputs.CLIENT_ID }}"
+          upstream-url: "${{ inputs.UPSTREAM_URL }}"
+          encryption-key: "${{ inputs.PROXY_ENCRYPTION_KEY }}"
+          redirection-url: "${{ inputs.PROXY_REDIRECTION_URL }}"
+          enable-refresh-tokens: true
+          server-read-timeout: 360s
+          server-write-timeout: 360s
+          upstream-timeout: 360s
+          upstream-response-header-timeout: 360s
+          enable-default-deny: false
+          cors-origins:
+            - "*"
+          resources:
+            - uri: /*
+              roles:
+                - ${{ inputs.ROLE }}
+            - uri: /manifest.json
+              white-listed: true
+            - uri: /favicon
+              white-listed: true
+        EOF
+      shell: bash
+
+    - name: Deploy Gatekeeper
+      run: |-
+        helm repo add gogatekeeper https://gogatekeeper.github.io/helm-gogatekeeper
+
+        helm upgrade --install ${{ inputs.RELEASE_NAME }} \
+          --values ${{ github.workspace }}/gatekeeper-values.yaml \
+          --namespace ${{ inputs.NAMESPACE }} \
+          --debug --timeout 5m \
+        gogatekeeper/gatekeeper
+      shell: bash
