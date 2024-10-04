@@ -31,7 +31,7 @@ runs:
   using: composite
   steps:
     - name: Dispatch deployment event
-      if: (inputs.REF == 'refs/heads/main' || inputs.REF == 'refs/heads/develop' || contains(inputs.REF, 'refs/heads/release'))
+      if: inputs.REF == 'refs/heads/main' || inputs.REF == 'refs/heads/develop' || contains(inputs.REF, 'refs/heads/release') || contains(inputs.REF, 'refs/heads/hotfix')
       run: |
         # Define the URL and payload
         URL="https://api.github.com/repos/${{ inputs.CD_REPOSITORY }}/actions/workflows/deploy.yml/dispatches"
