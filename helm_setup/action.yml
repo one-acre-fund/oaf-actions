@@ -29,7 +29,7 @@ runs:
         name: ${{ inputs.ARTIFACT_NAME }}
         run-id: ${{ inputs.RUN_ID }}
         repository: ${{ inputs.CI_REPOSITORY }}
-        path: ${{ github.workspace }}
+        path: ${{ github.workspace }}/${{ inputs.ARTIFACT_NAME }}
         github-token: ${{ inputs.GH_PAT }}
 
     - name: Display Structure of Downloaded Files
