@@ -7,6 +7,9 @@ inputs:
   RUN_ID:
     description: The unique workflow run id from the CI workflow.
     required: true
+  ARTIFACT_NAME:
+    description: The name of the artifact to download.
+    required: true
   CI_REPOSITORY:
     description: The CI repository.
     required: true
@@ -23,6 +26,7 @@ runs:
     - name: Download Artifacts
       uses: actions/download-artifact@v4.1.8
       with:
+        name: ${{ inputs.ARTIFACT_NAME }}
         run-id: ${{ inputs.RUN_ID }}
         repository: ${{ inputs.CI_REPOSITORY }}
         path: ${{ github.workspace }}
