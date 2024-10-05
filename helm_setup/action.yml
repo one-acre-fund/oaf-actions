@@ -1,7 +1,7 @@
 name: Setup Helm Environment
 description: A GitHub Action for configuring and preparing the environment to deploy Helm charts. This action sets up necessary artifacts, installs Helm and kubectl, and configures the Kubernetes context for deployment.
 inputs:
-  GH_PAT:
+  GITHUB_TOKEN:
     description: The token required to download the artifact.
     required: true
   RUN_ID:
@@ -30,7 +30,7 @@ runs:
         run-id: ${{ inputs.RUN_ID }}
         repository: ${{ inputs.CI_REPOSITORY }}
         path: ${{ github.workspace }}/${{ inputs.ARTIFACT_NAME }}
-        github-token: ${{ inputs.GH_PAT }}
+        github-token: ${{ inputs.GITHUB_TOKEN }}
 
     - name: Display Structure of Downloaded Files
       shell: bash
