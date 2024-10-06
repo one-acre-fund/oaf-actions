@@ -16,12 +16,6 @@ inputs:
   DEPLOYMENT_ENVIRONMENT:
     description: 'The environment to deploy the CI pipeline to.'
     required: true
-  WORKFLOW_RUN_URL:
-    description: 'The URL of the CD deployment.'
-    required: true
-  WORKFLOW_RUN_API_URL:
-    description: 'The URL of the CD deployment.'
-    required: true
   REQUIRED_CONTEXTS:
     description: 'The required contexts for the deployment to be successful.'
     required: true
@@ -57,6 +51,6 @@ runs:
             repo: "${{ inputs.REPOSITORY }}",
             deployment_id: deployment.id,
             state: "${{ inputs.STATE }}",
-            target_url: "${{ inputs.WORKFLOW_RUN_URL }}",
+            target_url: workflow_run.jobs.find(job => job.status === 'in_progress').html_url,
             log_url: workflow_run.jobs.find(job => job.status === 'in_progress').html_url
           });
