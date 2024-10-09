@@ -6,7 +6,7 @@ inputs:
     required: true
   RELEASE_NAME:
     description: 'The name of the release for the Postgresql server.'
-    default: 'odoo-db'
+    default: 'db'
     required: true
   POSTGRES_DATABASE_NAME:
     description: 'The name of the Postgresql database.'
@@ -52,7 +52,7 @@ runs:
   steps:
   - name: Create values.yaml
     run: |
-      cat <<EOF > ${{ github.workspace }}/odoo-db-values.yaml
+      cat <<EOF > ${{ github.workspace }}/db-values.yaml
       global:
         storageClass: "${{ inputs.POSTGRES_STORAGE_CLASS }}"
 
@@ -82,8 +82,8 @@ runs:
       EOF
     shell: bash
 
-  - name: Check odoo-db-values.yaml
-    run: cat ${{ github.workspace }}/odoo-db-values.yaml
+  - name: Check db-values.yaml
+    run: cat ${{ github.workspace }}/db-values.yaml
     shell: bash
 
   - name: Deploy PostgreSQL
@@ -95,7 +95,7 @@ runs:
         echo "Release ${{ inputs.RELEASE_NAME }} does not exist. Proceeding with deployment."
         helm repo add bitnami https://charts.bitnami.com/bitnami
         helm upgrade --install -n ${{ inputs.NAMESPACE }} \
-          --values ${{ github.workspace }}/odoo-db-values.yaml \
+          --values ${{ github.workspace }}/db-values.yaml \
           --debug \
           --wait \
           --timeout 5m \
