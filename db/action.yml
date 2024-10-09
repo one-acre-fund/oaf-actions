@@ -92,18 +92,16 @@ runs:
 
   - name: Deploy PostgreSQL
     run: |-
-      # Check if INSTALL_POSTGRES is set to true
       if [ "${{ inputs.INSTALL_POSTGRES }}" == "false" ]; then
         echo "Postgresql installation is disabled. Skipping deployment."
-        exit 0
+      else
+        echo "Postgresql installation is enabled. Proceeding with deployment."
+        helm repo add bitnami https://charts.bitnami.com/bitnami
+        helm upgrade --install -n ${{ inputs.NAMESPACE }} \
+          --values ${{ github.workspace }}/db-values.yaml \
+          --debug \
+          --wait \
+          --timeout 5m \
+          ${{ inputs.RELEASE_NAME }} bitnami/postgresql
       fi
-
-      echo "Release ${{ inputs.RELEASE_NAME }} does not exist. Proceeding with deployment."
-      helm repo add bitnami https://charts.bitnami.com/bitnami
-      helm upgrade --install -n ${{ inputs.NAMESPACE }} \
-        --values ${{ github.workspace }}/db-values.yaml \
-        --debug \
-        --wait \
-        --timeout 5m \
-        ${{ inputs.RELEASE_NAME }} bitnami/postgresql
     shell: bash
