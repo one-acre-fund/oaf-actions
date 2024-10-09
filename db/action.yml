@@ -8,6 +8,10 @@ inputs:
     description: 'The name of the release for the Postgresql server.'
     default: 'db'
     required: true
+  INSTALL_POSTGRES:
+    description: 'Whether to install Postgresql or not.'
+    default: 'false'
+    required: true
   POSTGRES_DATABASE_NAME:
     description: 'The name of the Postgresql database.'
     required: true
@@ -88,17 +92,18 @@ runs:
 
   - name: Deploy PostgreSQL
     run: |-
-      RELEASE_EXISTS=$(helm list -n ${{ inputs.NAMESPACE }} -q | grep -w ${{ inputs.RELEASE_NAME }})
-      if [ -n "$RELEASE_EXISTS" ]; then
-        echo "Release ${{ inputs.RELEASE_NAME }} already exists."
-      else
-        echo "Release ${{ inputs.RELEASE_NAME }} does not exist. Proceeding with deployment."
-        helm repo add bitnami https://charts.bitnami.com/bitnami
-        helm upgrade --install -n ${{ inputs.NAMESPACE }} \
-          --values ${{ github.workspace }}/db-values.yaml \
-          --debug \
-          --wait \
-          --timeout 5m \
-          ${{ inputs.RELEASE_NAME }} bitnami/postgresql
+      # Check if INSTALL_POSTGRES is set to true
+      if [ "${{ inputs.INSTALL_POSTGRES }}" == "false" ]; then
+        echo "Postgresql installation is disabled. Skipping deployment."
+        exit 0
       fi
+
+      echo "Release ${{ inputs.RELEASE_NAME }} does not exist. Proceeding with deployment."
+      helm repo add bitnami https://charts.bitnami.com/bitnami
+      helm upgrade --install -n ${{ inputs.NAMESPACE }} \
+        --values ${{ github.workspace }}/db-values.yaml \
+        --debug \
+        --wait \
+        --timeout 5m \
+        ${{ inputs.RELEASE_NAME }} bitnami/postgresql
     shell: bash
