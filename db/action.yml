@@ -10,7 +10,7 @@ inputs:
     required: true
   INSTALL_POSTGRES:
     description: 'Whether to install Postgresql or not.'
-    #default: 'false'
+    default: 'false'
     required: true
   POSTGRES_DATABASE_NAME:
     description: 'The name of the Postgresql database.'
