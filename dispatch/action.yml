@@ -22,6 +22,10 @@ inputs:
   CD_REPOSITORY:
     description: The name of the repository to dispatch the workflow to.
     required: true
+  CD_BRANCH:
+    description: The name of the branch to deploy to.
+    default: main
+    required: false
   API_VERSION:
     description: The GitHub API version to use.
     default: 2022-11-28
@@ -36,7 +40,7 @@ runs:
         URL="https://api.github.com/repos/${{ inputs.CD_REPOSITORY }}/actions/workflows/deploy.yml/dispatches"
         PAYLOAD=$(cat <<EOF
         {
-          "ref": "main",
+          "ref": "${{ inputs.CD_BRANCH }}",
           "inputs": {
             "run_id": "${{ inputs.RUN_ID }}",
             "ref": "${{ inputs.REF }}",
