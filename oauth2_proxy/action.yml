@@ -1,0 +1,71 @@
+name: Deploy OAuth2 Proxy
+description: Deploy OAuth2 Proxy using Helm with a dynamically generated values file.
+
+inputs:
+  NAMESPACE:
+    description: 'The Kubernetes namespace for deployment.'
+    required: true
+  RELEASE_NAME:
+    description: 'The Helm release name for the OAuth2 Proxy deployment.'
+    required: true
+  VERSION:
+    description: 'The version of the OAuth2 Proxy Helm chart to deploy.'
+    default: 7.8.0
+    required: false
+  OAUTH_CLIENT_ID:
+    description: 'The OAuth2 client ID.'
+    required: true
+  OAUTH_CLIENT_SECRET:
+    description: 'The OAuth2 client secret.'
+    required: true
+  OAUTH_COOKIE_SECRET:
+    description: 'The OAuth2 cookie secret.'
+    required: true
+  OAUTH_COOKIE_DOMAIN:
+    description: 'The domain for OAuth2 cookies.'
+    default: "oneacrefund.org"
+    required: true
+  OAUTH_COOKIE_EXPIRE:
+    description: 'The expiration time for OAuth2 cookies.'
+    default: "24h0m0s"
+    required: true
+  OAUTH_PROXY_UPSTREAM:
+    description: 'The upstream URL for OAuth2 Proxy.'
+    required: true
+  OAUTH_PROXY_SET_XAUTHREQUEST:
+    description: 'Set the X-Auth-Request header.'
+    default: "true"
+    required: false
+runs:
+  using: composite
+  steps:
+    - name: Create oauth2-values.yaml
+      run: |
+        cat <<EOF > ${{ github.workspace }}/oauth2-values.yaml
+        config:
+          clientID: ${{ inputs.OAUTH_CLIENT_ID }}
+          clientSecret: ${{ inputs.OAUTH_CLIENT_SECRET }}
+          cookieSecret: ${{ inputs.OAUTH_COOKIE_SECRET }}
+        extraEnv:
+          - name: OAUTH2_PROXY_COOKIE_DOMAIN
+            value: ${{ inputs.OAUTH_COOKIE_DOMAIN }}
+          - name: OAUTH2_PROXY_COOKIE_EXPIRE
+            value: ${{ inputs.OAUTH_COOKIE_EXPIRE }}
+          - name: OAUTH2_PROXY_REDIRECT_URL
+            value: "${{ inputs.OAUTH_PROXY_UPSTREAM }}/oauth2/callback"
+          - name: OAUTH2_PROXY_SET_XAUTHREQUEST
+            value: ${{ inputs.OAUTH_PROXY_SET_XAUTHREQUEST }}
+          - name: OAUTH_PROXY_UPSTREAM
+            value: "${{ inputs.OAUTH_PROXY_UPSTREAM }}"
+        EOF
+      shell: bash
+
+    - name: Deploy OAuth2 Proxy Helm chart
+      run: |
+        helm repo add oauth2-proxy https://oauth2-proxy.github.io/manifests
+        helm repo update
+        helm upgrade --install ${{ inputs.RELEASE_NAME }} \
+          --values ${{ github.workspace }}/oauth2-values.yaml \
+          --version ${{ inputs.VERSION }} \
+          oauth2-proxy/oauth2-proxy -n ${{ inputs.NAMESPACE }}
+      shell: bash
