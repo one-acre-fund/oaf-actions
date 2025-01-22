@@ -1,5 +1,7 @@
 name: Setup Helm Environment
 description: A GitHub Action for configuring and preparing the environment to deploy Helm charts. This action sets up necessary artifacts, installs Helm and kubectl, and configures the Kubernetes context for deployment.
+author: samaroon
+
 inputs:
   GITHUB_TOKEN:
     description: The token required to download the artifact.

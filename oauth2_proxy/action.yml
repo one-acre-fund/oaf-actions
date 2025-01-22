@@ -1,5 +1,6 @@
 name: Deploy OAuth2 Proxy
 description: Deploy OAuth2 Proxy using Helm with a dynamically generated values file.
+author: samaroon
 
 inputs:
   NAMESPACE:

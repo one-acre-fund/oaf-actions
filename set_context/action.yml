@@ -1,5 +1,7 @@
 name: Set Kubernetes Context
 description: A GitHub Action for setting the Kubernetes context for deployment.
+author: samaroon
+
 inputs:
   K8S_URL:
     description: The URL for the kubernetes cluster.
