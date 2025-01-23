@@ -39,7 +39,7 @@ runs:
       run: ls -R ${{ github.workspace }}
 
     - name: Set Kubernetes Context
-      uses: one-acre-fund/oaf-actions/set_context@main
+      uses: one-acre-fund/oaf-actions/set_context@1.0.0
       with:
         K8S_URL: ${{ inputs.K8S_URL }}
         K8S_SECRET: ${{ inputs.K8S_SECRET }}
