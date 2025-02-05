@@ -1,0 +1,80 @@
+name: Helm Couchbase Dependencies
+description: GitHub Action for deploying Couchbase dependencies.
+
+inputs:
+  ACR_PULL_PASSWORD:
+    description: Azure Registry Password.
+    required: true
+  ACR_PULL_USERNAME:
+    description: Azure Registry Username.
+    required: true
+  NAMESPACE:
+    description: The namespace for Couchbase.
+    required: true
+  RELEASE_NAME:
+    description: The release name for Couchbase.
+    required: true
+  COUCHBASE_CLUSTER:
+    description: The Couchbase cluster name.
+    required: true
+  COUCHBASE_PASSWORD:
+    description: The password for Couchbase.
+    required: true
+  COUCHBASE_USERNAME:
+    description: The username for Couchbase.
+    required: true
+  BUCKET_NAME:
+    description: The name of the Couchbase bucket.
+    required: true
+  BUCKET_SIZE:
+    description: The size of the Couchbase bucket.
+    required: true
+
+runs:
+  using: composite
+  steps:
+  - name: Create Values File
+    run: |
+      cat <<EOF > "${{ github.workspace }}/cb-dependencies-values.yaml"
+      cluster:
+        name: "${{ inputs.COUCHBASE_CLUSTER }}"
+        namespace: "${{ inputs.NAMESPACE }}"
+
+      buckets:
+        "${{ inputs.BUCKET_NAME }}":
+          size: "${{ inputs.BUCKET_SIZE }}"
+
+      users:
+        "${{ inputs.COUCHBASE_USERNAME }}":
+          autobind: true
+          password: "${{ inputs.COUCHBASE_PASSWORD }}"
+          authDomain: local
+          roles:
+            - name: bucket_admin
+              bucket: "${{ inputs.BUCKET_NAME }}"
+            - name: data_reader
+              bucket: "${{ inputs.BUCKET_NAME }}"
+            - name: query_select
+              bucket: "${{ inputs.BUCKET_NAME }}"
+            - name: data_writer
+              bucket: "${{ inputs.BUCKET_NAME }}"
+            - name: query_manage_index
+              bucket: "${{ inputs.BUCKET_NAME }}"
+      EOF
+    shell: bash
+
+  - name: Helm Couchbase Dependencies
+    run: |
+      export HELM_EXPERIMENTAL_OCI=1
+
+      echo "Logging into ACR..."
+      echo "${{ inputs.ACR_PULL_PASSWORD }}" | helm registry login oaftech.azurecr.io --username "${{ inputs.ACR_PULL_USERNAME }}" --password-stdin
+
+      echo "Deploying chart..."
+      helm upgrade --install "${{ inputs.RELEASE_NAME }}" \
+        --namespace "${{ inputs.NAMESPACE }}" \
+        --set users.developer=null \
+        --values "${{ github.workspace }}/cb-dependencies-values.yaml" \
+        --wait --timeout 5m --debug \
+         oci://oaftech.azurecr.io/helm/couchbase-dependencies
+    shell: bash
