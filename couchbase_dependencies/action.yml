@@ -73,7 +73,6 @@ runs:
       echo "Deploying chart..."
       helm upgrade --install "${{ inputs.RELEASE_NAME }}" \
         --namespace "${{ inputs.NAMESPACE }}" \
-        --set users.developer=null \
         --values "${{ github.workspace }}/cb-dependencies-values.yaml" \
         --wait --timeout 5m --debug \
          oci://oaftech.azurecr.io/helm/couchbase-dependencies
