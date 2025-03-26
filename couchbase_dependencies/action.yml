@@ -42,7 +42,7 @@ runs:
 
       buckets:
         "${{ inputs.BUCKET_NAME }}":
-          size: "${{ inputs.BUCKET_SIZE }}"
+          memoryQuota: "${{ inputs.BUCKET_SIZE }}"
 
       users:
         "${{ inputs.COUCHBASE_USERNAME }}":
