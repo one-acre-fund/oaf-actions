@@ -52,6 +52,10 @@ inputs:
     description: 'The memory request for the Postgresql server if a kubernetes managed service is used.'
     default: '1Gi'
     required: false
+  ENABLE_VOLUME_PERMISSIONS:
+    description: 'Whether to enable volume permissions for the postgres server , by default its false but this prevents older versions from writting to disk'
+    default: 'false'
+    required: false
 
 runs:
   using: composite
@@ -65,6 +69,9 @@ runs:
       image:
         tag: ${{ inputs.POSTGRES_IMAGE_TAG }}
         debug: true
+      
+      volumePermissions:
+        enabled: ${{ inputs.ENABLE_VOLUME_PERMISSIONS }}
 
       auth:
         enablePostgresUser: true
