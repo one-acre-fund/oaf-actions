@@ -65,6 +65,12 @@ runs:
       cat <<EOF > ${{ github.workspace }}/db-values.yaml
       global:
         storageClass: "${{ inputs.POSTGRES_STORAGE_CLASS }}"
+        postgresql:
+          auth:
+            postgresPassword: "${{ inputs.POSTGRES_DATABASE_PASSWORD }}"
+            username: "${{ inputs.POSTGRES_DATABASE_USER }}"
+            password: "${{ inputs.POSTGRES_DATABASE_PASSWORD }}"
+            database: "${{ inputs.POSTGRES_DATABASE_NAME }}"
 
       image:
         tag: ${{ inputs.POSTGRES_IMAGE_TAG }}
@@ -73,13 +79,6 @@ runs:
       volumePermissions:
         enabled: ${{ inputs.ENABLE_VOLUME_PERMISSIONS }}
 
-      auth:
-        enablePostgresUser: true
-        postgresPassword: "${{ inputs.POSTGRES_DATABASE_PASSWORD }}"
-        username: "${{ inputs.POSTGRES_DATABASE_USER }}"
-        password: "${{ inputs.POSTGRES_DATABASE_PASSWORD }}"
-        database: "${{ inputs.POSTGRES_DATABASE_NAME }}"
-        usePasswordFiles: false
 
       primary:
         persistence:
