@@ -56,6 +56,9 @@ inputs:
     description: 'Whether to enable volume permissions for the postgres server , by default its false but this prevents older versions from writting to disk'
     default: 'false'
     required: false
+  POSTGRES_BITNAMI_CHART_VERSION:
+    description: 'Postgres Bitnami Chart Version'
+    required: 'true'
 
 runs:
   using: composite
@@ -112,6 +115,7 @@ runs:
           --values ${{ github.workspace }}/db-values.yaml \
           --debug \
           --wait \
+          --version ${{ inputs.POSTGRES_BITNAMI_CHART_VERSION }} \
           --timeout 5m \
           ${{ inputs.RELEASE_NAME }} bitnami/postgresql
       fi
