@@ -71,6 +71,10 @@ runs:
             username: "${{ inputs.POSTGRES_DATABASE_USER }}"
             password: "${{ inputs.POSTGRES_DATABASE_PASSWORD }}"
             database: "${{ inputs.POSTGRES_DATABASE_NAME }}"
+            existingSecret: airbyte-secrets
+            secretKeys:
+              adminPasswordKey: "POSTGRES_ADMIN_PASSWORD"
+              userPasswordKey: "DATABASE_PASSWORD"
 
       image:
         tag: ${{ inputs.POSTGRES_IMAGE_TAG }}
