@@ -79,6 +79,7 @@ runs:
         username: "${{ inputs.POSTGRES_DATABASE_USER }}"
         password: "${{ inputs.POSTGRES_DATABASE_PASSWORD }}"
         database: "${{ inputs.POSTGRES_DATABASE_NAME }}"
+        usePasswordFiles: false
 
       primary:
         persistence:
