@@ -67,9 +67,7 @@ runs:
         storageClass: "${{ inputs.POSTGRES_STORAGE_CLASS }}"
         postgresql:
           auth:
-            postgresPassword: "${{ inputs.POSTGRES_DATABASE_PASSWORD }}"
             username: "${{ inputs.POSTGRES_DATABASE_USER }}"
-            password: "${{ inputs.POSTGRES_DATABASE_PASSWORD }}"
             database: "${{ inputs.POSTGRES_DATABASE_NAME }}"
             existingSecret: airbyte-secrets
             secretKeys:
