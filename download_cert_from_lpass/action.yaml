@@ -26,7 +26,7 @@ runs:
 
         echo "Logging into LastPass..."
         export LPASS_DISABLE_PINENTRY=1
-        echo "${{ inputs.LPASS_PASS }}" | lpass login "${{ inputs.LPASS_USER }}"
+        echo "${{ inputs.LPASS_PASS }}" | lpass login --trust "${{ inputs.LPASS_USER }}"
 
         echo "Fetching cert entries with prefix: ${{ inputs.CERT_PATH_PREFIX }}"
         lpass ls | grep "${{ inputs.CERT_PATH_PREFIX }}" | cut -d ' ' -f 1 | while read -r NAME; do
