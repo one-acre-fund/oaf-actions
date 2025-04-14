@@ -1,0 +1,30 @@
+name: 'Add NGINX Proxy Site'
+description: 'Configures a reverse proxy in NGINX for Dozzle or other apps'
+inputs:
+  SITE_NAME:
+    description: 'The domain name for the NGINX server block'
+    required: true
+  DOMAIN:
+    description: 'The domain name for the app to be proxied'
+    required: true
+  PROXY_PORT:
+    description: 'The local port the proxy will forward to'
+    required: true
+  CERT_PATH:
+    description: 'Path to the SSL certificate file'
+    required: false
+  KEY_PATH:
+    description: 'Path to the SSL key file'
+    required: false
+runs:
+  using: "composite"
+  steps:
+    - name: Setup NGINX reverse proxy
+      shell: bash
+      run: |
+        bash "${{ github.action_path }}/scripts/add-nginx-site.sh" \
+          "${{ inputs.SITE_NAME }}" \
+          "${{ inputs.DOMAIN }}" \
+          "${{ inputs.PROXY_PORT }}" \
+          "${{ inputs.CERT_PATH }}" \
+          "${{ inputs.KEY_PATH }}"
