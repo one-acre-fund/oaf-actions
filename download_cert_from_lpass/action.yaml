@@ -1,0 +1,48 @@
+name: Download Certificate from LastPass
+description: Logs into LastPass CLI and downloads certs based on a prefix, moving them to a specified directory.
+
+inputs:
+  LPASS_USER:
+    description: "LastPass username (email)"
+    required: true
+  LPASS_PASS:
+    description: "LastPass master password"
+    required: true
+  CERT_PATH_PREFIX:
+    description: "Prefix used to identify cert entries in LastPass (e.g., NGINX-CERTS)"
+    required: true
+  OUTPUT_DIR:
+    description: "Target directory to place the downloaded certificates (e.g., /etc/nginx/nginx-certs)"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install LastPass CLI
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y lastpass-cli
+
+    - name: Login to LastPass and Download Certificates
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        echo "Logging into LastPass..."
+        export LPASS_DISABLE_PINENTRY=1
+        echo "${{ inputs.LPASS_PASS }}" | lpass login "${{ inputs.LPASS_USER }}"
+
+        echo "Fetching cert entries with prefix: ${{ inputs.CERT_PATH_PREFIX }}"
+        lpass ls | grep "${{ inputs.CERT_PATH_PREFIX }}" | cut -d ' ' -f 1 | while read -r NAME; do
+          echo "Downloading $NAME"
+          lpass show --notes "$NAME" > "$(basename "$NAME")"
+        done
+
+        echo "Moving downloaded certs to ${{ inputs.OUTPUT_DIR }}"
+        
+        sudo mkdir -p "${{ inputs.OUTPUT_DIR }}"
+        sudo mv *.org.full.pem "${{ inputs.OUTPUT_DIR }}"
+        sudo mv *.org.privkey.key "${{ inputs.OUTPUT_DIR }}"
+
+        echo "✅ Certificates downloaded to ${{ inputs.OUTPUT_DIR }}"
