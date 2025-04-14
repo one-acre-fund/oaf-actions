@@ -22,6 +22,7 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
+        set -x
 
         echo "Logging into LastPass..."
         export LPASS_DISABLE_PINENTRY=1
