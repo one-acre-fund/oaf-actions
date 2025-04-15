@@ -8,6 +8,10 @@ inputs:
   LPASS_PASS:
     description: "LastPass master password"
     required: true
+  LPASS_VERSION:
+    description: "LastPass CLI version to install (default: 1.6.1)"
+    required: false
+    default: "1.6.1"
   CERT_PATH_PREFIX:
     description: "Prefix used to identify cert entries in LastPass (e.g., NGINX-CERTS)"
     required: true
@@ -21,8 +25,33 @@ runs:
     - name: Install LastPass CLI
       shell: bash
       run: |
-        sudo apt-get update
-        sudo apt-get install -y lastpass-cli
+        #!/bin/bash
+        set -euo pipefail
+
+        # Download and extract source code
+        curl -LO https://github.com/lastpass/lastpass-cli/releases/download/v${{ inputs.LPASS_VERSION }}/lastpass-cli-${{ inputs.LPASS_VERSION }}.tar.gz
+        tar -xzf lastpass-cli-${{ inputs.LPASS_VERSION }}.tar.gz
+        cd lastpass-cli-${{ inputs.LPASS_VERSION }}
+
+        # Build and install
+        cmake -DCMAKE_INSTALL_PREFIX=/usr/local .
+        make
+        sudo make install
+
+        # Verify installation
+        if command -v lpass >/dev/null 2>&1; then
+          echo "LastPass CLI installed successfully at $(which lpass)"
+          lpass --version
+        else
+          echo "Installation failed: 'lpass' command not found."
+          exit 1
+        fi
+
+        # Clean up
+        cd ..
+        rm -rf lastpass-cli-${{ inputs.LPASS_VERSION }} lastpass-cli-${{ inputs.LPASS_VERSION }}.tar.gz
+
+        echo "Installation complete."
 
     - name: Login to LastPass and Download Certificates
       shell: bash
@@ -47,3 +76,4 @@ runs:
         sudo mv *.org.privkey.key "${{ inputs.OUTPUT_DIR }}"
 
         echo "✅ Certificates downloaded to ${{ inputs.OUTPUT_DIR }}"
+        ls -l "${{ inputs.OUTPUT_DIR }}"
