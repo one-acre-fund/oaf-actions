@@ -18,6 +18,11 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Install LastPass CLI
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y lastpass-cli
+
     - name: Login to LastPass and Download Certificates
       shell: bash
       run: |
