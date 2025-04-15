@@ -76,4 +76,4 @@ runs:
         sudo mv *.org.privkey.key "${{ inputs.OUTPUT_DIR }}"
 
         echo "✅ Certificates downloaded to ${{ inputs.OUTPUT_DIR }}"
-        ls -l "${{ inputs.OUTPUT_DIR }}"
+        lpass logout --force
