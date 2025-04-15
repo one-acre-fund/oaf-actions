@@ -19,6 +19,7 @@ runs:
   using: "composite"
   steps:
     - name: Install LastPass CLI
+      shell: bash
       run: |
         sudo apt-get update
         sudo apt-get install -y lastpass-cli
