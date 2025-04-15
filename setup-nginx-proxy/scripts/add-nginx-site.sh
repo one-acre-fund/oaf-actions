@@ -22,7 +22,7 @@ server {
 server {
     listen 443 ssl;
     listen [::]:443 ssl;
-    SITE_NAME ${DOMAIN};
+    server_name ${DOMAIN};
 
     ssl_certificate ${CERT_PATH};
     ssl_certificate_key ${KEY_PATH};
