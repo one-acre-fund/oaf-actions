@@ -14,7 +14,7 @@ sudo tee "$NGINX_CONF" > /dev/null <<EOF
 server {
     listen 80;
     listen [::]:80;
-    SITE_NAME ${DOMAIN};
+    server_name ${DOMAIN};
     return 301 https://\$host\$request_uri;
 }
 
