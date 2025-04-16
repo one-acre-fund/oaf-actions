@@ -1,7 +1,9 @@
 name: Dispatch Deployment Event
 description: Trigger a deployment event for a specific workflow run.
 author: samaroon
-
+branding:
+  icon: rocket
+  color: orange
 inputs:
   TOKEN:
     description: The GitHub token to use for the dispatch.

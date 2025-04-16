@@ -1,7 +1,9 @@
 name: Helm PostgreSQL
 description: GitHub Action for deploying PostgreSQL with Helm
 author: samaroon
-
+branding:
+  icon: database
+  color: green
 inputs:
   NAMESPACE:
     description: "The namespace to deploy the Postgresql server to."

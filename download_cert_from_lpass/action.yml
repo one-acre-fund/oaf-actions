@@ -1,6 +1,9 @@
 name: Download Certificate from LastPass
 description: Logs into LastPass CLI and downloads certs based on a prefix, moving them to a specified directory.
-
+author: samaroon
+branding:
+  icon: download
+  color: green
 inputs:
   USER:
     description: "LastPass username (email)"

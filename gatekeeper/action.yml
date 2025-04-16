@@ -1,7 +1,9 @@
 name: Deploy OIDC Gatekeeper Proxy
 description: Automates the deployment of the Gatekeeper (OpenID Connect) proxy using Helm to manage secure access to upstream services.
 author: samaroon
-
+branding:
+  icon: shield
+  color: green
 inputs:
   NAMESPACE:
     description: "The Kubernetes namespace where the Gatekeeper proxy will be deployed."

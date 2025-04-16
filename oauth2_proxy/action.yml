@@ -1,7 +1,9 @@
 name: Deploy OAuth2 Proxy
 description: Deploy OAuth2 Proxy using Helm with a dynamically generated values file.
 author: samaroon
-
+branding:
+  icon: log-in
+  color: green
 inputs:
   NAMESPACE:
     description: "The Kubernetes namespace for deployment."
