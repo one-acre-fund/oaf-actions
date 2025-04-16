@@ -4,37 +4,37 @@ author: samaroon
 
 inputs:
   NAMESPACE:
-    description: 'The Kubernetes namespace for deployment.'
+    description: "The Kubernetes namespace for deployment."
     required: true
   RELEASE_NAME:
-    description: 'The Helm release name for the OAuth2 Proxy deployment.'
+    description: "The Helm release name for the OAuth2 Proxy deployment."
     required: true
   VERSION:
-    description: 'The version of the OAuth2 Proxy Helm chart to deploy.'
+    description: "The version of the OAuth2 Proxy Helm chart to deploy."
     default: 7.8.0
     required: false
   OAUTH_CLIENT_ID:
-    description: 'The OAuth2 client ID.'
+    description: "The OAuth2 client ID."
     required: true
   OAUTH_CLIENT_SECRET:
-    description: 'The OAuth2 client secret.'
+    description: "The OAuth2 client secret."
     required: true
   OAUTH_COOKIE_SECRET:
-    description: 'The OAuth2 cookie secret.'
+    description: "The OAuth2 cookie secret."
     required: true
   OAUTH_COOKIE_DOMAIN:
-    description: 'The domain for OAuth2 cookies.'
+    description: "The domain for OAuth2 cookies."
     default: "oneacrefund.org"
     required: true
   OAUTH_COOKIE_EXPIRE:
-    description: 'The expiration time for OAuth2 cookies.'
+    description: "The expiration time for OAuth2 cookies."
     default: "24h0m0s"
     required: true
   OAUTH_PROXY_UPSTREAM:
-    description: 'The upstream URL for OAuth2 Proxy.'
+    description: "The upstream URL for OAuth2 Proxy."
     required: true
   OAUTH_PROXY_SET_XAUTHREQUEST:
-    description: 'Set the X-Auth-Request header.'
+    description: "Set the X-Auth-Request header."
     default: "true"
     required: false
 runs:

@@ -1,20 +1,20 @@
-name: 'Add NGINX Proxy Site'
-description: 'Configures a reverse proxy in NGINX for Dozzle or other apps'
+name: "Add NGINX Proxy Site"
+description: "Configures a reverse proxy in NGINX for Dozzle or other apps"
 inputs:
   SITE_NAME:
-    description: 'The domain name for the NGINX server block'
+    description: "The domain name for the NGINX server block"
     required: true
   DOMAIN:
-    description: 'The domain name for the app to be proxied'
+    description: "The domain name for the app to be proxied"
     required: true
   PROXY_PORT:
-    description: 'The local port the proxy will forward to'
+    description: "The local port the proxy will forward to"
     required: true
   TLS_CERTIFICATE_PATH:
-    description: 'Path to the SSL certificate file'
+    description: "Path to the SSL certificate file"
     required: false
   TLS_PRIVATE_KEY_PATH:
-    description: 'Path to the SSL key file'
+    description: "Path to the SSL key file"
     required: false
 runs:
   using: "composite"

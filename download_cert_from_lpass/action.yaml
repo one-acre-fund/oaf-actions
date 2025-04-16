@@ -12,7 +12,7 @@ inputs:
     description: "LastPass CLI version to install (default: 1.6.1)"
     required: false
     default: "1.6.1"
-  TLS_CERTIFICATE_PATH_PREFIX:
+  CERTIFICATE_PATH_PREFIX:
     description: "Prefix used to identify cert entries in LastPass (e.g., 'Certs/operations.oneacrefund.org')"
     required: true
   OUTPUT_DIR:
@@ -28,49 +28,45 @@ runs:
         #!/bin/bash
         set -euo pipefail
 
-        # Download and extract source code
-        curl -LO https://github.com/lastpass/lastpass-cli/releases/download/v${{ inputs.VERSION }}/lastpass-cli-${{ inputs.VERSION }}.tar.gz
-        tar -xzf lastpass-cli-${{ inputs.VERSION }}.tar.gz
+        echo "🔧 Installing LastPass CLI silently..."
+
+        curl -sSLO https://github.com/lastpass/lastpass-cli/releases/download/v${{ inputs.VERSION }}/lastpass-cli-${{ inputs.VERSION }}.tar.gz
+        tar -xzf lastpass-cli-${{ inputs.VERSION }}.tar.gz > /dev/null 2>&1
         cd lastpass-cli-${{ inputs.VERSION }}
 
-        # Build and install
-        cmake -DCMAKE_INSTALL_PREFIX=/usr/local .
-        make
-        sudo make install
+        cmake -DCMAKE_INSTALL_PREFIX=/usr/local . > /dev/null 2>&1
+        make > /dev/null 2>&1
+        sudo make install > /dev/null 2>&1
 
-        # Verify installation
         if command -v lpass >/dev/null 2>&1; then
-          echo "LastPass CLI installed successfully at $(which lpass)"
-          lpass --version
+          echo "✅ LastPass CLI installed successfully at $(which lpass)"
         else
-          echo "Installation failed: 'lpass' command not found."
+          echo "❌ Installation failed: 'lpass' command not found."
           exit 1
         fi
 
-        # Clean up
         cd ..
         rm -rf lastpass-cli-${{ inputs.VERSION }} lastpass-cli-${{ inputs.VERSION }}.tar.gz
 
-        echo "Installation complete."
+        echo "✅ Installation complete."
 
     - name: Login to LastPass and Download Certificates
       shell: bash
       run: |
         set -euo pipefail
-        set -x
+        set +x  # Disable command echoing to avoid leaking sensitive info
 
-        echo "Logging into LastPass..."
+        echo "🔐 Logging into LastPass..."
         export LPASS_DISABLE_PINENTRY=1
         echo "${{ inputs.PASSWORD }}" | lpass login --trust "${{ inputs.USER }}"
 
-        echo "Fetching cert entries with prefix: ${{ inputs.TLS_CERTIFICATE_PATH_PREFIX }}"
-        lpass ls | grep "${{ inputs.TLS_CERTIFICATE_PATH_PREFIX }}" | cut -d ' ' -f 1 | while read -r NAME; do
-          echo "Downloading $NAME"
+        echo "📥 Fetching cert entries with prefix: ${{ inputs.CERTIFICATE_PATH_PREFIX }}"
+        lpass ls | grep "${{ inputs.CERTIFICATE_PATH_PREFIX }}" | cut -d ' ' -f 1 | while read -r NAME; do
+          echo "➡️  Downloading $NAME"
           lpass show --notes "$NAME" > "$(basename "$NAME")"
         done
 
-        echo "Moving downloaded certs to ${{ inputs.OUTPUT_DIR }}"
-        
+        echo "📂 Moving downloaded certs to ${{ inputs.OUTPUT_DIR }}"
         sudo mkdir -p "${{ inputs.OUTPUT_DIR }}"
         sudo mv *.org.full.pem "${{ inputs.OUTPUT_DIR }}"
         sudo mv *.org.privkey.key "${{ inputs.OUTPUT_DIR }}"

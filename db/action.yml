@@ -4,106 +4,106 @@ author: samaroon
 
 inputs:
   NAMESPACE:
-    description: 'The namespace to deploy the Postgresql server to.'
+    description: "The namespace to deploy the Postgresql server to."
     required: true
   RELEASE_NAME:
-    description: 'The name of the release for the Postgresql server.'
-    default: 'db'
+    description: "The name of the release for the Postgresql server."
+    default: "db"
     required: true
   INSTALL_POSTGRES:
-    description: 'Whether to install Postgresql or not.'
-    default: 'false'
+    description: "Whether to install Postgresql or not."
+    default: "false"
     required: true
   POSTGRES_DATABASE_NAME:
-    description: 'The name of the Postgresql database.'
+    description: "The name of the Postgresql database."
     required: true
   POSTGRES_DATABASE_USER:
-    description: 'The username for the Postgresql database.'
+    description: "The username for the Postgresql database."
     required: true
   POSTGRES_DATABASE_PASSWORD:
-    description: 'The password for the Postgresql database.'
+    description: "The password for the Postgresql database."
     required: true
   POSTGRES_IMAGE_TAG:
-    description: 'The image tag for the Postgresql server if a kubernetes managed service is used.'
+    description: "The image tag for the Postgresql server if a kubernetes managed service is used."
     required: false
   POSTGRES_STORAGE_CLASS:
-    description: 'The storage class for the Postgresql server if a kubernetes managed service is used.'
+    description: "The storage class for the Postgresql server if a kubernetes managed service is used."
     required: false
   POSTGRES_STORAGE_SIZE:
-    description: 'The storage size for the Postgresql if a kubernetes managed service is used.'
-    default: '15Gi'
+    description: "The storage size for the Postgresql if a kubernetes managed service is used."
+    default: "15Gi"
     required: false
   MAX_CONNECTIONS:
-    description: 'The maximum number of connections to the Postgresql server if a kubernetes managed service is used.'
+    description: "The maximum number of connections to the Postgresql server if a kubernetes managed service is used."
     required: true
   POSTGRES_CPU_LIMIT:
-    description: 'The CPU limit for the Postgresql server if a kubernetes managed service is used.'
-    default: '2'
+    description: "The CPU limit for the Postgresql server if a kubernetes managed service is used."
+    default: "2"
     required: false
   POSTGRES_MEMORY_LIMIT:
-    description: 'The memory limit for the Postgresql server if a kubernetes managed service is used.'
-    default: '3Gi'
+    description: "The memory limit for the Postgresql server if a kubernetes managed service is used."
+    default: "3Gi"
     required: false
   POSTGRES_CPU_REQUEST:
-    description: 'The CPU request for the Postgresql server if a kubernetes managed service is used.'
-    default: '1'
+    description: "The CPU request for the Postgresql server if a kubernetes managed service is used."
+    default: "1"
     required: false
   POSTGRES_MEMORY_REQUEST:
-    description: 'The memory request for the Postgresql server if a kubernetes managed service is used.'
-    default: '1Gi'
+    description: "The memory request for the Postgresql server if a kubernetes managed service is used."
+    default: "1Gi"
     required: false
 
 runs:
   using: composite
   steps:
-  - name: Create values.yaml
-    run: |
-      cat <<EOF > ${{ github.workspace }}/db-values.yaml
-      global:
-        storageClass: "${{ inputs.POSTGRES_STORAGE_CLASS }}"
+    - name: Create values.yaml
+      run: |
+        cat <<EOF > ${{ github.workspace }}/db-values.yaml
+        global:
+          storageClass: "${{ inputs.POSTGRES_STORAGE_CLASS }}"
 
-      image:
-        tag: ${{ inputs.POSTGRES_IMAGE_TAG }}
-        debug: true
+        image:
+          tag: ${{ inputs.POSTGRES_IMAGE_TAG }}
+          debug: true
 
-      auth:
-        enablePostgresUser: true
-        postgresPassword: "${{ inputs.POSTGRES_DATABASE_PASSWORD }}"
-        username: "${{ inputs.POSTGRES_DATABASE_USER }}"
-        password: "${{ inputs.POSTGRES_DATABASE_PASSWORD }}"
-        database: "${{ inputs.POSTGRES_DATABASE_NAME }}"
+        auth:
+          enablePostgresUser: true
+          postgresPassword: "${{ inputs.POSTGRES_DATABASE_PASSWORD }}"
+          username: "${{ inputs.POSTGRES_DATABASE_USER }}"
+          password: "${{ inputs.POSTGRES_DATABASE_PASSWORD }}"
+          database: "${{ inputs.POSTGRES_DATABASE_NAME }}"
 
-      primary:
-        persistence:
-          size: ${{ inputs.POSTGRES_STORAGE_SIZE }}
-        extendedConfiguration: |
-          max_connections = ${{ inputs.MAX_CONNECTIONS }}
-        resources:
-          limits:
-            cpu: ${{ inputs.POSTGRES_CPU_LIMIT }}
-            memory: ${{ inputs.POSTGRES_MEMORY_LIMIT }}
-          requests:
-            cpu: ${{ inputs.POSTGRES_CPU_REQUEST }}
-            memory: ${{ inputs.POSTGRES_MEMORY_REQUEST }}
-      EOF
-    shell: bash
+        primary:
+          persistence:
+            size: ${{ inputs.POSTGRES_STORAGE_SIZE }}
+          extendedConfiguration: |
+            max_connections = ${{ inputs.MAX_CONNECTIONS }}
+          resources:
+            limits:
+              cpu: ${{ inputs.POSTGRES_CPU_LIMIT }}
+              memory: ${{ inputs.POSTGRES_MEMORY_LIMIT }}
+            requests:
+              cpu: ${{ inputs.POSTGRES_CPU_REQUEST }}
+              memory: ${{ inputs.POSTGRES_MEMORY_REQUEST }}
+        EOF
+      shell: bash
 
-  - name: Check db-values.yaml
-    run: cat ${{ github.workspace }}/db-values.yaml
-    shell: bash
+    - name: Check db-values.yaml
+      run: cat ${{ github.workspace }}/db-values.yaml
+      shell: bash
 
-  - name: Deploy PostgreSQL
-    run: |-
-      if [ "${{ inputs.INSTALL_POSTGRES }}" == "false" ]; then
-        echo "Postgresql installation is disabled. Skipping deployment."
-      else
-        echo "Postgresql installation is enabled. Proceeding with deployment."
-        helm repo add bitnami https://charts.bitnami.com/bitnami
-        helm upgrade --install -n ${{ inputs.NAMESPACE }} \
-          --values ${{ github.workspace }}/db-values.yaml \
-          --debug \
-          --wait \
-          --timeout 5m \
-          ${{ inputs.RELEASE_NAME }} bitnami/postgresql
-      fi
-    shell: bash
+    - name: Deploy PostgreSQL
+      run: |-
+        if [ "${{ inputs.INSTALL_POSTGRES }}" == "false" ]; then
+          echo "Postgresql installation is disabled. Skipping deployment."
+        else
+          echo "Postgresql installation is enabled. Proceeding with deployment."
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+          helm upgrade --install -n ${{ inputs.NAMESPACE }} \
+            --values ${{ github.workspace }}/db-values.yaml \
+            --debug \
+            --wait \
+            --timeout 5m \
+            ${{ inputs.RELEASE_NAME }} bitnami/postgresql
+        fi
+      shell: bash
