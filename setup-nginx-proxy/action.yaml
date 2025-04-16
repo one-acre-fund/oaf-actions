@@ -10,10 +10,10 @@ inputs:
   PROXY_PORT:
     description: 'The local port the proxy will forward to'
     required: true
-  CERT_PATH:
+  TLS_CERTIFICATE_PATH:
     description: 'Path to the SSL certificate file'
     required: false
-  KEY_PATH:
+  TLS_PRIVATE_KEY_PATH:
     description: 'Path to the SSL key file'
     required: false
 runs:
@@ -26,5 +26,5 @@ runs:
           "${{ inputs.SITE_NAME }}" \
           "${{ inputs.DOMAIN }}" \
           "${{ inputs.PROXY_PORT }}" \
-          "${{ inputs.CERT_PATH }}" \
-          "${{ inputs.KEY_PATH }}"
+          "${{ inputs.TLS_CERTIFICATE_PATH }}" \
+          "${{ inputs.TLS_PRIVATE_KEY_PATH }}"

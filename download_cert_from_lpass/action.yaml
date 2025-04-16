@@ -2,21 +2,21 @@ name: Download Certificate from LastPass
 description: Logs into LastPass CLI and downloads certs based on a prefix, moving them to a specified directory.
 
 inputs:
-  LPASS_USER:
+  USER:
     description: "LastPass username (email)"
     required: true
-  LPASS_PASS:
+  PASSWORD:
     description: "LastPass master password"
     required: true
-  LPASS_VERSION:
+  VERSION:
     description: "LastPass CLI version to install (default: 1.6.1)"
     required: false
     default: "1.6.1"
-  CERT_PATH_PREFIX:
-    description: "Prefix used to identify cert entries in LastPass (e.g., NGINX-CERTS)"
+  TLS_CERTIFICATE_PATH_PREFIX:
+    description: "Prefix used to identify cert entries in LastPass (e.g., 'Certs/operations.oneacrefund.org')"
     required: true
   OUTPUT_DIR:
-    description: "Target directory to place the downloaded certificates (e.g., /etc/nginx/nginx-certs)"
+    description: "Target directory to place the downloaded certificates (e.g., /etc/ssl/certs)"
     required: true
 
 runs:
@@ -29,9 +29,9 @@ runs:
         set -euo pipefail
 
         # Download and extract source code
-        curl -LO https://github.com/lastpass/lastpass-cli/releases/download/v${{ inputs.LPASS_VERSION }}/lastpass-cli-${{ inputs.LPASS_VERSION }}.tar.gz
-        tar -xzf lastpass-cli-${{ inputs.LPASS_VERSION }}.tar.gz
-        cd lastpass-cli-${{ inputs.LPASS_VERSION }}
+        curl -LO https://github.com/lastpass/lastpass-cli/releases/download/v${{ inputs.VERSION }}/lastpass-cli-${{ inputs.VERSION }}.tar.gz
+        tar -xzf lastpass-cli-${{ inputs.VERSION }}.tar.gz
+        cd lastpass-cli-${{ inputs.VERSION }}
 
         # Build and install
         cmake -DCMAKE_INSTALL_PREFIX=/usr/local .
@@ -49,7 +49,7 @@ runs:
 
         # Clean up
         cd ..
-        rm -rf lastpass-cli-${{ inputs.LPASS_VERSION }} lastpass-cli-${{ inputs.LPASS_VERSION }}.tar.gz
+        rm -rf lastpass-cli-${{ inputs.VERSION }} lastpass-cli-${{ inputs.VERSION }}.tar.gz
 
         echo "Installation complete."
 
@@ -61,10 +61,10 @@ runs:
 
         echo "Logging into LastPass..."
         export LPASS_DISABLE_PINENTRY=1
-        echo "${{ inputs.LPASS_PASS }}" | lpass login --trust "${{ inputs.LPASS_USER }}"
+        echo "${{ inputs.PASSWORD }}" | lpass login --trust "${{ inputs.USER }}"
 
-        echo "Fetching cert entries with prefix: ${{ inputs.CERT_PATH_PREFIX }}"
-        lpass ls | grep "${{ inputs.CERT_PATH_PREFIX }}" | cut -d ' ' -f 1 | while read -r NAME; do
+        echo "Fetching cert entries with prefix: ${{ inputs.TLS_CERTIFICATE_PATH_PREFIX }}"
+        lpass ls | grep "${{ inputs.TLS_CERTIFICATE_PATH_PREFIX }}" | cut -d ' ' -f 1 | while read -r NAME; do
           echo "Downloading $NAME"
           lpass show --notes "$NAME" > "$(basename "$NAME")"
         done
