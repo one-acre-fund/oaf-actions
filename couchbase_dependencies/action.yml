@@ -1,6 +1,9 @@
 name: Helm Couchbase Dependencies
 description: GitHub Action for deploying Couchbase dependencies.
-
+author: samaroon
+branding:
+  icon: layers
+  color: green
 inputs:
   ACR_PULL_PASSWORD:
     description: Azure Registry Password.

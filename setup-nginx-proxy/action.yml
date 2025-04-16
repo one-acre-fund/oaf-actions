@@ -1,5 +1,9 @@
 name: "Add NGINX Proxy Site"
 description: "Configures a reverse proxy in NGINX for Dozzle or other apps"
+author: samaroon
+branding:
+  icon: globe
+  color: green
 inputs:
   SITE_NAME:
     description: "The domain name for the NGINX server block"
@@ -16,6 +20,7 @@ inputs:
   TLS_PRIVATE_KEY_PATH:
     description: "Path to the SSL key file"
     required: false
+
 runs:
   using: "composite"
   steps:
