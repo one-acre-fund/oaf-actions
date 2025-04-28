@@ -35,9 +35,9 @@ inputs:
     description: "The storage size for the Postgresql if a kubernetes managed service is used."
     default: "15Gi"
     required: false
-  MAX_CONNECTIONS:
-    description: "The maximum number of connections to the Postgresql server if a kubernetes managed service is used."
-    required: true
+  EXTENDED_CONFIGURATION:
+    description: "The extended configuration for the Postgresql server."
+    required: false
   POSTGRES_CPU_LIMIT:
     description: "The CPU limit for the Postgresql server if a kubernetes managed service is used."
     default: "2"
@@ -79,7 +79,7 @@ runs:
           persistence:
             size: ${{ inputs.POSTGRES_STORAGE_SIZE }}
           extendedConfiguration: |
-            max_connections = ${{ inputs.MAX_CONNECTIONS }}
+            ${{ inputs.EXTENDED_CONFIGURATION }}
           resources:
             limits:
               cpu: ${{ inputs.POSTGRES_CPU_LIMIT }}
