@@ -4,8 +4,9 @@ set -e
 SITE_NAME="$1"
 DOMAIN="$2"
 PROXY_PORT="$3"
-TLS_CERTIFICATE_PATH="$4"
-TLS_PRIVATE_KEY_PATH="$5"
+LISTEN_PORT="$4"
+TLS_CERTIFICATE_PATH="$5"
+TLS_PRIVATE_KEY_PATH="$6"
 
 NGINX_CONF="/etc/nginx/sites-available/$SITE_NAME"
 
@@ -20,8 +21,8 @@ server {
 
 # HTTPS server
 server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
+    listen $LISTEN_PORT ssl;
+    listen [::]:$LISTEN_PORT ssl;
     server_name ${DOMAIN};
 
     ssl_certificate ${TLS_CERTIFICATE_PATH};

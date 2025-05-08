@@ -14,6 +14,10 @@ inputs:
   PROXY_PORT:
     description: "The local port the proxy will forward to"
     required: true
+  LISTEN_PORT:
+    description: "The port NGINX will listen on (default: 443)"
+    default: "443"
+    required: false
   TLS_CERTIFICATE_PATH:
     description: "Path to the SSL certificate file"
     required: false
@@ -31,5 +35,6 @@ runs:
           "${{ inputs.SITE_NAME }}" \
           "${{ inputs.DOMAIN }}" \
           "${{ inputs.PROXY_PORT }}" \
+          "${{ inputs.LISTEN_PORT }}" \
           "${{ inputs.TLS_CERTIFICATE_PATH }}" \
           "${{ inputs.TLS_PRIVATE_KEY_PATH }}"
