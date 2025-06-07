@@ -11,6 +11,7 @@ Configures a reverse proxy in NGINX for Dozzle or other apps
 | `SITE_NAME` | The domain name for the NGINX server block | `true` | `""` |
 | `DOMAIN` | The domain name for the app to be proxied | `true` | `""` |
 | `PROXY_PORT` | The local port the proxy will forward to | `true` | `""` |
+| `LISTEN_PORT` | The port NGINX will listen on (default: 443) | `false` | `443` |
 | `TLS_CERTIFICATE_PATH` | Path to the SSL certificate file | `false` | `""` |
 | `TLS_PRIVATE_KEY_PATH` | Path to the SSL key file | `false` | `""` |
 
@@ -40,6 +41,12 @@ This action is a `composite` action.
     #
     # Required: true
     # Default: ""
+
+    LISTEN_PORT:
+    # The port NGINX will listen on (default: 443)
+    #
+    # Required: false
+    # Default: 443
 
     TLS_CERTIFICATE_PATH:
     # Path to the SSL certificate file
