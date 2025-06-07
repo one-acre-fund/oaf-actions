@@ -26,7 +26,7 @@ This action is a `composite` action.
 ### Usage
 
 ```yaml
-- uses: ***PROJECT***@***VERSION***
+- uses: one-acre-fund/oaf-actions/oauth2_proxy@main
   with:
     NAMESPACE:
     # The Kubernetes namespace for deployment.

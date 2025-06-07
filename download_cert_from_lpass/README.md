@@ -21,7 +21,7 @@ This action is a `composite` action.
 ### Usage
 
 ```yaml
-- uses: ***PROJECT***@***VERSION***
+- uses: one-acre-fund/oaf-actions/download_cert_from_lpass@main
   with:
     USER:
     # LastPass username (email)

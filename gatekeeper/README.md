@@ -25,7 +25,7 @@ This action is a `composite` action.
 ### Usage
 
 ```yaml
-- uses: ***PROJECT***@***VERSION***
+- uses: one-acre-fund/oaf-actions/gatekeeper@main
   with:
     NAMESPACE:
     # The Kubernetes namespace where the Gatekeeper proxy will be deployed.

@@ -22,7 +22,7 @@ This action is a `composite` action.
 ### Usage
 
 ```yaml
-- uses: ***PROJECT***@***VERSION***
+- uses: one-acre-fund/oaf-actions/helm_setup@main
   with:
     GITHUB_TOKEN:
     # The token required to download the artifact.

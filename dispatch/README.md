@@ -25,7 +25,7 @@ This action is a `composite` action.
 ### Usage
 
 ```yaml
-- uses: ***PROJECT***@***VERSION***
+- uses: one-acre-fund/oaf-actions/dispatch@main
   with:
     TOKEN:
     # The GitHub token to use for the dispatch.

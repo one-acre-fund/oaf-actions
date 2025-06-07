@@ -30,7 +30,7 @@ This action is a `composite` action.
 ### Usage
 
 ```yaml
-- uses: ***PROJECT***@***VERSION***
+- uses: one-acre-fund/oaf-actions/db@main
   with:
     NAMESPACE:
     # The namespace to deploy the Postgresql server to.

@@ -25,7 +25,7 @@ This action is a `composite` action.
 ### Usage
 
 ```yaml
-- uses: ***PROJECT***@***VERSION***
+- uses: one-acre-fund/oaf-actions/couchbase_dependencies@main
   with:
     ACR_PULL_PASSWORD:
     # Azure Registry Password.

@@ -18,7 +18,7 @@ This action is a `composite` action.
 ### Usage
 
 ```yaml
-- uses: ***PROJECT***@***VERSION***
+- uses: one-acre-fund/oaf-actions/set_context@main
   with:
     K8S_URL:
     # The URL for the kubernetes cluster.

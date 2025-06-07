@@ -22,7 +22,7 @@ This action is a `composite` action.
 ### Usage
 
 ```yaml
-- uses: ***PROJECT***@***VERSION***
+- uses: one-acre-fund/oaf-actions/setup-nginx-proxy@main
   with:
     SITE_NAME:
     # The domain name for the NGINX server block
