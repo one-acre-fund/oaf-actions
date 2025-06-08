@@ -31,7 +31,7 @@ server {
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers HIGH:!aNULL:!MD5;
 
-    location /$SITE_NAME/ {
+    location / {
         proxy_pass http://127.0.0.1:$PROXY_PORT;
         proxy_http_version 1.1;
 
