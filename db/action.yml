@@ -16,6 +16,10 @@ inputs:
     description: "Whether to install Postgresql or not."
     default: "false"
     required: true
+  IMAGE_PULL_SECRET_NAME:
+    description: "The name of the image pull secret to use for pulling the Postgresql image."
+    default: "dockerhub-secret"
+    required: false
   POSTGRES_DATABASE_NAME:
     description: "The name of the Postgresql database."
     required: true
@@ -25,6 +29,10 @@ inputs:
   POSTGRES_DATABASE_PASSWORD:
     description: "The password for the Postgresql database."
     required: true
+  POSTGRES_IMAGE_REPOSITORY:
+    description: "The image repository for the Postgresql server if a kubernetes managed service is used."
+    default: "bitnamilegacy/postgresql"
+    required: false
   POSTGRES_IMAGE_TAG:
     description: "The image tag for the Postgresql server if a kubernetes managed service is used."
     required: false
@@ -62,9 +70,14 @@ runs:
       run: |
         cat <<EOF > ${{ github.workspace }}/db-values.yaml
         global:
+          security:
+            allowInsecureImages: true
+          imagePullSecrets: 
+            - ${{ inputs.IMAGE_PULL_SECRET_NAME }}
           storageClass: "${{ inputs.POSTGRES_STORAGE_CLASS }}"
 
         image:
+          repository: ${{ inputs.POSTGRES_IMAGE_REPOSITORY }}
           tag: ${{ inputs.POSTGRES_IMAGE_TAG }}
           debug: true
 
