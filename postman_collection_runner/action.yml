@@ -1,0 +1,32 @@
+name: "Run Postman Collection"
+description: "Run Postman API tests using local collection and environment files with the Postman CLI and generate an HTML report"
+inputs:
+  COLLECTION:
+    description: "Path to the Postman collection JSON file"
+    required: true
+  ENVIRONMENT:
+    description: "Path to the Postman environment JSON file"
+    required: false
+  REPORT:
+    description: "Path to the output HTML report"
+    required: false
+    default: "postman-report.html"
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v5.0.0
+
+    - name: Install Postman CLI
+      shell: bash
+      run: |
+        curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
+
+    - name: Run Postman collection and generate HTML report
+      shell: bash
+      run: |
+        if [ -z "${{ inputs.ENVIRONMENT }}" ]; then
+          postman collection run "${{ inputs.COLLECTION }}" --reporters cli,html --reporter-html-export "${{ inputs.REPORT }}"
+        else
+          postman collection run "${{ inputs.COLLECTION }}" -e "${{ inputs.ENVIRONMENT }}" --reporters cli,html --reporter-html-export "${{ inputs.REPORT }}"
+        fi
