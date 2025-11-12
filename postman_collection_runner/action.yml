@@ -28,7 +28,7 @@ runs:
     - name: Login to Postman CLI
       shell: bash
       run: |
-        postman login --apikey "${{ inputs.API_KEY }}"
+        postman login --with-api-key "${{ inputs.API_KEY }}"
 
     - name: Run Postman collection and generate HTML report
       shell: bash
