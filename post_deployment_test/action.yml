@@ -66,9 +66,15 @@ runs:
         # Parse and export additional environment variables
         if [ "${{ inputs.test_env_vars }}" != "{}" ]; then
           echo "Setting additional environment variables..."
-          echo '${{ inputs.test_env_vars }}' | jq -r 'to_entries | .[] | "export \(.key)=\(.value)"' | while read -r line; do
-            eval "$line"
-          done
+          echo "  Input JSON: ${{ inputs.test_env_vars }}"
+          # Use process substitution to avoid subshell
+          while IFS='=' read -r key value; do
+            export "$key=$value"
+            echo "  Exported: $key=$value"
+          done < <(echo '${{ inputs.test_env_vars }}' | jq -r 'to_entries | .[] | "\(.key)=\(.value)"')
+
+          # Debug: Show FORCE_TEST_FAILURE value
+          echo "  FORCE_TEST_FAILURE is now: ${FORCE_TEST_FAILURE:-not set}"
         fi
 
         # Run the test script
@@ -372,7 +378,13 @@ runs:
           echo "✅ **Rollback:** Not needed" >> $GITHUB_STEP_SUMMARY
         elif [ "${{ steps.rollback_check.outputs.triggered }}" = "true" ]; then
           echo "❌ **Test Result:** Failed" >> $GITHUB_STEP_SUMMARY
-          echo "🔄 **Rollback:** Triggered and completed" >> $GITHUB_STEP_SUMMARY
+
+          # Check if rollback verification passed
+          if [ "${{ steps.verify_rollback.outcome }}" = "success" ]; then
+            echo "✅ **Rollback:** Successful - System rolled back to revision ${{ inputs.pre_deploy_revision }} and verified healthy" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Rollback:** Failed - System may be unhealthy after rollback" >> $GITHUB_STEP_SUMMARY
+          fi
         else
           echo "❌ **Test Result:** Failed" >> $GITHUB_STEP_SUMMARY
           echo "⚠️ **Rollback:** Not triggered" >> $GITHUB_STEP_SUMMARY
@@ -383,7 +395,12 @@ runs:
       shell: bash
       run: |
         if [ "${{ steps.rollback_check.outputs.triggered }}" = "true" ]; then
-          echo "::error::Deployment failed and was automatically rolled back to revision ${{ inputs.pre_deploy_revision }}. Please investigate the failure cause."
+          # Check if rollback verification passed
+          if [ "${{ steps.verify_rollback.outcome }}" = "success" ]; then
+            echo "::error::Deployment failed and was automatically rolled back to revision ${{ inputs.pre_deploy_revision }}. Rollback verification passed - system is healthy. Please investigate the deployment failure cause."
+          else
+            echo "::error::Deployment failed and rollback was attempted to revision ${{ inputs.pre_deploy_revision }}, but rollback verification failed. System may be unhealthy. Please investigate immediately."
+          fi
         else
           echo "::error::Deployment tests failed but rollback was not performed. Please investigate immediately."
         fi
