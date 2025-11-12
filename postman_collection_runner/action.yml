@@ -7,6 +7,9 @@ inputs:
   ENVIRONMENT:
     description: "Path to the Postman environment JSON file"
     required: false
+  API_KEY:
+    description: "Postman API Key for authentication"
+    required: true
   REPORT:
     description: "Path to the output HTML report"
     required: false
@@ -21,6 +24,11 @@ runs:
       shell: bash
       run: |
         curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
+
+    - name: Login to Postman CLI
+      shell: bash
+      run: |
+        postman login --apikey "${{ inputs.API_KEY }}"
 
     - name: Run Postman collection and generate HTML report
       shell: bash
