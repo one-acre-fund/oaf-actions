@@ -115,9 +115,9 @@ runs:
           -n "${{ inputs.namespace }}" \
           --wait \
           --timeout="${{ inputs.rollback_timeout }}"; then
-          echo "✅ Rollback completed successfully"
+          echo "✅ Rollback command completed - verifying health..."
         else
-          echo "❌ Rollback failed!"
+          echo "❌ Rollback command failed!"
           exit 1
         fi
 
@@ -130,7 +130,7 @@ runs:
 
         # Re-run the test script to verify health
         if bash "${{ inputs.test_script }}"; then
-          echo "✅ Rollback verification passed - system is healthy"
+          echo "✅ Rollback completed and verified - system is healthy"
         else
           echo "❌ Rollback verification failed - system may be unhealthy!"
           exit 1
