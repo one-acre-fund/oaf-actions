@@ -1,0 +1,390 @@
+name: Post-Deployment Test and Rollback
+description: Runs post-deployment tests and automatically rolls back on failure
+
+inputs:
+  namespace:
+    description: Kubernetes namespace
+    required: true
+  release_name:
+    description: Helm release name
+    required: true
+  test_script:
+    description: Path to the test script to run
+    required: true
+  pre_deploy_revision:
+    description: Helm revision before deployment (from previous step)
+    required: true
+  enable_rollback:
+    description: Enable automatic rollback on test failure
+    required: false
+    default: "true"
+  rollback_timeout:
+    description: Timeout for rollback operation (e.g., 5m)
+    required: false
+    default: "5m"
+  test_env_vars:
+    description: Additional environment variables for test script (JSON format)
+    required: false
+    default: "{}"
+  slack_webhook_url:
+    description: Slack webhook URL for rollback notifications
+    required: false
+    default: ""
+  slack_channel:
+    description: Slack channel name (e.g., #deployments)
+    required: false
+    default: "#deployment-alerts"
+  environment:
+    description: Deployment environment (e.g., Integration, QA, UAT, Production)
+    required: false
+    default: ""
+  github_run_url:
+    description: GitHub Actions run URL for linking in notifications
+    required: false
+    default: ""
+
+outputs:
+  test_result:
+    description: Result of post-deployment tests (passed/failed)
+    value: ${{ steps.run_tests.outputs.result }}
+  rollback_triggered:
+    description: Whether rollback was triggered (true/false)
+    value: ${{ steps.rollback_check.outputs.triggered }}
+  final_revision:
+    description: Final Helm revision after test/rollback
+    value: ${{ steps.final_state.outputs.revision }}
+
+runs:
+  using: composite
+  steps:
+    - name: Run Post-Deployment Tests
+      id: run_tests
+      shell: bash
+      run: |
+        echo "Running post-deployment tests for ${{ inputs.release_name }}..."
+
+        # Parse and export additional environment variables
+        if [ "${{ inputs.test_env_vars }}" != "{}" ]; then
+          echo "Setting additional environment variables..."
+          echo '${{ inputs.test_env_vars }}' | jq -r 'to_entries | .[] | "export \(.key)=\(.value)"' | while read -r line; do
+            eval "$line"
+          done
+        fi
+
+        # Run the test script
+        if bash "${{ inputs.test_script }}"; then
+          echo "result=passed" >> $GITHUB_OUTPUT
+          echo "✅ Post-deployment tests passed"
+          exit 0
+        else
+          echo "result=failed" >> $GITHUB_OUTPUT
+          echo "❌ Post-deployment tests failed"
+          exit 1
+        fi
+      env:
+        NAMESPACE: ${{ inputs.namespace }}
+        RELEASE_NAME: ${{ inputs.release_name }}
+
+    - name: Check Rollback Conditions
+      id: rollback_check
+      if: failure() && steps.run_tests.outcome == 'failure'
+      shell: bash
+      run: |
+        if [ "${{ inputs.enable_rollback }}" != "true" ]; then
+          echo "triggered=false" >> $GITHUB_OUTPUT
+          echo "⚠️ Rollback is disabled - skipping"
+          exit 0
+        fi
+
+        if [ "${{ inputs.pre_deploy_revision }}" = "0" ]; then
+          echo "triggered=false" >> $GITHUB_OUTPUT
+          echo "⚠️ No previous revision found (first deployment) - cannot rollback"
+          exit 0
+        fi
+
+        echo "triggered=true" >> $GITHUB_OUTPUT
+        echo "🔄 Rollback conditions met - proceeding with rollback"
+
+    - name: Rollback on Test Failure
+      if: failure() && steps.run_tests.outcome == 'failure' && steps.rollback_check.outputs.triggered == 'true'
+      shell: bash
+      run: |
+        echo "❌ Post-deployment tests failed! Rolling back to revision ${{ inputs.pre_deploy_revision }}..."
+
+        if helm rollback "${{ inputs.release_name }}" "${{ inputs.pre_deploy_revision }}" \
+          -n "${{ inputs.namespace }}" \
+          --wait \
+          --timeout="${{ inputs.rollback_timeout }}"; then
+          echo "✅ Rollback completed successfully"
+        else
+          echo "❌ Rollback failed!"
+          exit 1
+        fi
+
+    - name: Verify Rollback
+      id: verify_rollback
+      if: failure() && steps.run_tests.outcome == 'failure' && steps.rollback_check.outputs.triggered == 'true'
+      shell: bash
+      run: |
+        echo "Verifying rollback was successful..."
+
+        # Re-run the test script to verify health
+        if bash "${{ inputs.test_script }}"; then
+          echo "✅ Rollback verification passed - system is healthy"
+        else
+          echo "❌ Rollback verification failed - system may be unhealthy!"
+          exit 1
+        fi
+      env:
+        NAMESPACE: ${{ inputs.namespace }}
+        RELEASE_NAME: ${{ inputs.release_name }}
+
+    - name: Send Slack Notification on Rollback
+      if: failure() && steps.run_tests.outcome == 'failure' && steps.rollback_check.outputs.triggered == 'true' && inputs.slack_webhook_url != ''
+      shell: bash
+      run: |
+        # Determine rollback verification status
+        ROLLBACK_STATUS="✅ Rollback Successful"
+        ROLLBACK_EMOJI=":white_check_mark:"
+        if [ "${{ steps.verify_rollback.outcome }}" != "success" ]; then
+          ROLLBACK_STATUS="⚠️ Rollback Failed - Manual Intervention Required"
+          ROLLBACK_EMOJI=":x:"
+        fi
+
+        # Build GitHub Actions run URL
+        RUN_URL="${{ inputs.github_run_url }}"
+        if [ -z "$RUN_URL" ]; then
+          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        fi
+
+        # Determine environment display
+        ENV_DISPLAY="${{ inputs.environment }}"
+        if [ -z "$ENV_DISPLAY" ]; then
+          ENV_DISPLAY="N/A"
+        fi
+
+        # Send Slack notification
+        curl -X POST "${{ inputs.slack_webhook_url }}" \
+          -H 'Content-Type: application/json' \
+          -d @- <<EOF
+        {
+          "channel": "${{ inputs.slack_channel }}",
+          "username": "Deployment Bot",
+          "icon_emoji": ":rotating_light:",
+          "attachments": [
+            {
+              "color": "danger",
+              "pretext": ":warning: *Deployment Rollback Alert*",
+              "title": "🔄 Automatic Rollback Triggered",
+              "text": "A deployment failed post-deployment tests and has been automatically rolled back.",
+              "fields": [
+                {
+                  "title": "🏷️ Service",
+                  "value": "\`${{ inputs.release_name }}\`",
+                  "short": true
+                },
+                {
+                  "title": "🌍 Environment",
+                  "value": "*${ENV_DISPLAY}*",
+                  "short": true
+                },
+                {
+                  "title": "📦 Namespace",
+                  "value": "\`${{ inputs.namespace }}\`",
+                  "short": true
+                },
+                {
+                  "title": "⏪ Rolled Back To",
+                  "value": "Revision *${{ inputs.pre_deploy_revision }}*",
+                  "short": true
+                },
+                {
+                  "title": "📊 Rollback Status",
+                  "value": "${ROLLBACK_STATUS}",
+                  "short": false
+                },
+                {
+                  "title": "❌ Failure Reason",
+                  "value": "Post-deployment health checks failed",
+                  "short": false
+                },
+                {
+                  "title": "👤 Triggered By",
+                  "value": "\`${{ github.actor }}\`",
+                  "short": true
+                },
+                {
+                  "title": "⚙️ Workflow",
+                  "value": "\`${{ github.workflow }}\`",
+                  "short": true
+                }
+              ],
+              "actions": [
+                {
+                  "type": "button",
+                  "text": "📋 View Workflow Details",
+                  "url": "${RUN_URL}",
+                  "style": "danger"
+                }
+              ],
+              "footer": "GitHub Actions • CD Pipeline",
+              "footer_icon": "https://github.githubassets.com/favicons/favicon.png",
+              "ts": $(date +%s)
+            }
+          ]
+        }
+        EOF
+
+        echo "📢 Rollback notification sent to ${{ inputs.slack_channel }}"
+
+    - name: Send Slack Notification on Success
+      if: success() && steps.run_tests.outcome == 'success' && inputs.slack_webhook_url != ''
+      shell: bash
+      run: |
+        # Build GitHub Actions run URL
+        RUN_URL="${{ inputs.github_run_url }}"
+        if [ -z "$RUN_URL" ]; then
+          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        fi
+
+        # Get new revision
+        NEW_REVISION=$(helm list -n "${{ inputs.namespace }}" -o json | \
+          jq -r '.[] | select(.name=="${{ inputs.release_name }}") | .revision' || echo "unknown")
+
+        # Determine environment display
+        ENV_DISPLAY="${{ inputs.environment }}"
+        if [ -z "$ENV_DISPLAY" ]; then
+          ENV_DISPLAY="N/A"
+        fi
+
+        # Determine environment emoji
+        case "$ENV_DISPLAY" in
+          Production|production|PRODUCTION|Prod|prod)
+            ENV_EMOJI=":rocket:"
+            ;;
+          QA|qa)
+            ENV_EMOJI=":test_tube:"
+            ;;
+          UAT|uat)
+            ENV_EMOJI=":mag:"
+            ;;
+          Integration|integration|INT|int)
+            ENV_EMOJI=":gear:"
+            ;;
+          *)
+            ENV_EMOJI=":package:"
+            ;;
+        esac
+
+        # Send Slack notification
+        curl -X POST "${{ inputs.slack_webhook_url }}" \
+          -H 'Content-Type: application/json' \
+          -d @- <<EOF
+        {
+          "channel": "${{ inputs.slack_channel }}",
+          "username": "Deployment Bot",
+          "icon_emoji": ":rocket:",
+          "attachments": [
+            {
+              "color": "good",
+              "pretext": ":tada: *Deployment Successful*",
+              "title": "✅ Deployment Completed Successfully",
+              "text": "All post-deployment health checks passed. Service is healthy and ready.",
+              "fields": [
+                {
+                  "title": "🏷️ Service",
+                  "value": "\`${{ inputs.release_name }}\`",
+                  "short": true
+                },
+                {
+                  "title": "${ENV_EMOJI} Environment",
+                  "value": "*${ENV_DISPLAY}*",
+                  "short": true
+                },
+                {
+                  "title": "📦 Namespace",
+                  "value": "\`${{ inputs.namespace }}\`",
+                  "short": true
+                },
+                {
+                  "title": "🔢 New Revision",
+                  "value": "*${NEW_REVISION}* (from ${{ inputs.pre_deploy_revision }})",
+                  "short": true
+                },
+                {
+                  "title": "✅ Health Status",
+                  "value": "All checks passed • Service is healthy",
+                  "short": false
+                },
+                {
+                  "title": "👤 Deployed By",
+                  "value": "\`${{ github.actor }}\`",
+                  "short": true
+                },
+                {
+                  "title": "⚙️ Workflow",
+                  "value": "\`${{ github.workflow }}\`",
+                  "short": true
+                }
+              ],
+              "actions": [
+                {
+                  "type": "button",
+                  "text": "📋 View Workflow Details",
+                  "url": "${RUN_URL}",
+                  "style": "primary"
+                }
+              ],
+              "footer": "GitHub Actions • CD Pipeline",
+              "footer_icon": "https://github.githubassets.com/favicons/favicon.png",
+              "ts": $(date +%s)
+            }
+          ]
+        }
+        EOF
+
+        echo "📢 Success notification sent to ${{ inputs.slack_channel }}"
+
+    - name: Get Final State
+      id: final_state
+      if: always()
+      shell: bash
+      run: |
+        FINAL_REVISION=$(helm list -n "${{ inputs.namespace }}" -o json | \
+          jq -r '.[] | select(.name=="${{ inputs.release_name }}") | .revision' || echo "unknown")
+        echo "revision=$FINAL_REVISION" >> $GITHUB_OUTPUT
+        echo "Final revision: $FINAL_REVISION"
+
+    - name: Generate Summary
+      if: always()
+      shell: bash
+      run: |
+        echo "## Post-Deployment Test Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Release:** ${{ inputs.release_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Namespace:** ${{ inputs.namespace }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Pre-Deploy Revision:** ${{ inputs.pre_deploy_revision }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Final Revision:** ${{ steps.final_state.outputs.revision }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        if [ "${{ steps.run_tests.outputs.result }}" = "passed" ]; then
+          echo "✅ **Test Result:** Passed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Rollback:** Not needed" >> $GITHUB_STEP_SUMMARY
+        elif [ "${{ steps.rollback_check.outputs.triggered }}" = "true" ]; then
+          echo "❌ **Test Result:** Failed" >> $GITHUB_STEP_SUMMARY
+          echo "🔄 **Rollback:** Triggered and completed" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ **Test Result:** Failed" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ **Rollback:** Not triggered" >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Notify Failure
+      if: failure() && steps.run_tests.outcome == 'failure'
+      shell: bash
+      run: |
+        if [ "${{ steps.rollback_check.outputs.triggered }}" = "true" ]; then
+          echo "::error::Deployment failed and was automatically rolled back to revision ${{ inputs.pre_deploy_revision }}. Please investigate the failure cause."
+        else
+          echo "::error::Deployment tests failed but rollback was not performed. Please investigate immediately."
+        fi
+        exit 1
