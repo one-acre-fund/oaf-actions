@@ -34,6 +34,9 @@ inputs:
     description: The GitHub API version to use.
     default: 2022-11-28
     required: false
+  ISSUE_KEY:
+    description: The issue key related to the deployment.
+    required: false
 
 runs:
   using: composite
@@ -50,7 +53,8 @@ runs:
             "ref": "${{ inputs.REF }}",
             "ref_name": "${{ inputs.REF_NAME }}",
             "sha": "${{ inputs.SHA }}",
-            "repository": "${{ inputs.CI_REPOSITORY }}"
+            "repository": "${{ inputs.CI_REPOSITORY }}",
+            "issue_key": "${{ inputs.ISSUE_KEY }}"
           }
         }
         EOF
