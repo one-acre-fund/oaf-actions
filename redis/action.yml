@@ -1,0 +1,203 @@
+name: Helm Redis
+description: GitHub Action for deploying production-grade Redis with Helm
+author: orchide
+branding:
+  icon: database
+  color: red
+inputs:
+  NAMESPACE:
+    description: "The namespace to deploy the Redis server to."
+    required: true
+  RELEASE_NAME:
+    description: "The name of the release for the Redis server."
+    default: "redis"
+    required: true
+  INSTALL_REDIS:
+    description: "Whether to install Redis or not."
+    default: "false"
+    required: true
+  IMAGE_PULL_SECRET_NAME:
+    description: "The name of the image pull secret to use for pulling the Redis image."
+    default: "dockerhub-secret"
+    required: false
+
+  # Architecture
+  REDIS_ARCHITECTURE:
+    description: "Redis architecture: standalone or replication."
+    default: "standalone"
+    required: false
+
+  # Image settings
+  REDIS_IMAGE_REPOSITORY:
+    description: "The image repository for the Redis server."
+    default: "bitnamilegacy/redis"
+    required: false
+  REDIS_IMAGE_TAG:
+    description: "The image tag for the Redis server."
+    default: "7.4"
+    required: false
+
+  # Authentication
+  REDIS_AUTH_ENABLED:
+    description: "Whether to enable Redis authentication."
+    default: "true"
+    required: false
+  REDIS_PASSWORD:
+    description: "The password for the Redis server. Required if AUTH_ENABLED is true."
+    required: false
+
+  # Persistence - AOF
+  REDIS_AOF_ENABLED:
+    description: "Enable AOF (Append Only File) persistence."
+    default: "true"
+    required: false
+  REDIS_AOF_FSYNC:
+    description: "AOF fsync policy: always, everysec, or no."
+    default: "everysec"
+    required: false
+
+  # Persistence - RDB
+  REDIS_RDB_ENABLED:
+    description: "Enable RDB persistence (snapshotting)."
+    default: "true"
+    required: false
+
+  # Eviction Policy
+  REDIS_MAXMEMORY_POLICY:
+    description: "Redis eviction policy: noeviction, allkeys-lru, volatile-lru, allkeys-random, volatile-random, volatile-ttl, allkeys-lfu, volatile-lfu."
+    default: "allkeys-lru"
+    required: false
+  REDIS_MAXMEMORY:
+    description: "Maximum memory Redis can use (e.g., 256mb, 1gb). Leave empty for no limit."
+    default: ""
+    required: false
+
+  # Storage
+  REDIS_STORAGE_CLASS:
+    description: "The storage class for Redis persistent storage."
+    required: false
+  REDIS_STORAGE_SIZE:
+    description: "The storage size for Redis persistent storage."
+    default: "8Gi"
+    required: false
+
+  # Resources - Master/Standalone
+  REDIS_CPU_LIMIT:
+    description: "The CPU limit for the Redis master/standalone node."
+    default: "1"
+    required: false
+  REDIS_MEMORY_LIMIT:
+    description: "The memory limit for the Redis master/standalone node."
+    default: "1Gi"
+    required: false
+  REDIS_CPU_REQUEST:
+    description: "The CPU request for the Redis master/standalone node."
+    default: "500m"
+    required: false
+  REDIS_MEMORY_REQUEST:
+    description: "The memory request for the Redis master/standalone node."
+    default: "512Mi"
+    required: false
+
+  # Replica settings (only used when architecture is replication)
+  REDIS_REPLICA_COUNT:
+    description: "Number of Redis replicas (only used when architecture is replication)."
+    default: "3"
+    required: false
+  REDIS_REPLICA_CPU_LIMIT:
+    description: "The CPU limit for Redis replica nodes."
+    default: "1"
+    required: false
+  REDIS_REPLICA_MEMORY_LIMIT:
+    description: "The memory limit for Redis replica nodes."
+    default: "1Gi"
+    required: false
+  REDIS_REPLICA_CPU_REQUEST:
+    description: "The CPU request for Redis replica nodes."
+    default: "500m"
+    required: false
+  REDIS_REPLICA_MEMORY_REQUEST:
+    description: "The memory request for Redis replica nodes."
+    default: "512Mi"
+    required: false
+
+  # Extended configuration
+  EXTENDED_CONFIGURATION:
+    description: "Additional Redis configuration parameters (one per line)."
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - name: Create redis-values.yaml
+      run: |
+        cat <<EOF > ${{ github.workspace }}/redis-values.yaml
+        global:
+          imagePullSecrets:
+            - ${{ inputs.IMAGE_PULL_SECRET_NAME }}
+          storageClass: "${{ inputs.REDIS_STORAGE_CLASS }}"
+
+        architecture: ${{ inputs.REDIS_ARCHITECTURE }}
+
+        image:
+          repository: ${{ inputs.REDIS_IMAGE_REPOSITORY }}
+          tag: ${{ inputs.REDIS_IMAGE_TAG }}
+
+        auth:
+          enabled: ${{ inputs.REDIS_AUTH_ENABLED }}
+          password: "${{ inputs.REDIS_PASSWORD }}"
+
+        commonConfiguration: |
+          appendonly ${{ inputs.REDIS_AOF_ENABLED == 'true' && 'yes' || 'no' }}
+          appendfsync ${{ inputs.REDIS_AOF_FSYNC }}
+          save ${{ inputs.REDIS_RDB_ENABLED == 'true' && '900 1 300 10 60 10000' || '""' }}
+          maxmemory-policy ${{ inputs.REDIS_MAXMEMORY_POLICY }}
+          ${{ inputs.REDIS_MAXMEMORY != '' && format('maxmemory {0}', inputs.REDIS_MAXMEMORY) || '' }}
+          ${{ inputs.EXTENDED_CONFIGURATION }}
+
+        master:
+          persistence:
+            enabled: true
+            size: ${{ inputs.REDIS_STORAGE_SIZE }}
+          resources:
+            limits:
+              cpu: ${{ inputs.REDIS_CPU_LIMIT }}
+              memory: ${{ inputs.REDIS_MEMORY_LIMIT }}
+            requests:
+              cpu: ${{ inputs.REDIS_CPU_REQUEST }}
+              memory: ${{ inputs.REDIS_MEMORY_REQUEST }}
+
+        replica:
+          replicaCount: ${{ inputs.REDIS_REPLICA_COUNT }}
+          persistence:
+            enabled: true
+            size: ${{ inputs.REDIS_STORAGE_SIZE }}
+          resources:
+            limits:
+              cpu: ${{ inputs.REDIS_REPLICA_CPU_LIMIT }}
+              memory: ${{ inputs.REDIS_REPLICA_MEMORY_LIMIT }}
+            requests:
+              cpu: ${{ inputs.REDIS_REPLICA_CPU_REQUEST }}
+              memory: ${{ inputs.REDIS_REPLICA_MEMORY_REQUEST }}
+        EOF
+      shell: bash
+
+    - name: Check redis-values.yaml
+      run: cat ${{ github.workspace }}/redis-values.yaml
+      shell: bash
+
+    - name: Deploy Redis
+      run: |-
+        if [ "${{ inputs.INSTALL_REDIS }}" == "false" ]; then
+          echo "Redis installation is disabled. Skipping deployment."
+        else
+          echo "Redis installation is enabled. Proceeding with deployment."
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+          helm upgrade --install -n ${{ inputs.NAMESPACE }} \
+            --values ${{ github.workspace }}/redis-values.yaml \
+            --debug \
+            --wait \
+            --timeout 5m \
+            ${{ inputs.RELEASE_NAME }} bitnami/redis
+        fi
+      shell: bash
