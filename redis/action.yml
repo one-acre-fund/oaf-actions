@@ -121,6 +121,18 @@ inputs:
     default: "512Mi"
     required: false
 
+  # Graceful shutdown
+  REDIS_TERMINATION_GRACE_PERIOD:
+    description: "Seconds to wait for Redis to shutdown gracefully before SIGKILL."
+    default: "60"
+    required: false
+
+  # Replica AOF settings (disable to prevent corruption since replicas sync from master)
+  REDIS_REPLICA_AOF_ENABLED:
+    description: "Enable AOF on replicas. Recommend 'false' since replicas sync from master."
+    default: "false"
+    required: false
+
   # Extended configuration
   EXTENDED_CONFIGURATION:
     description: "Additional Redis configuration parameters (one per line)."
@@ -156,6 +168,7 @@ runs:
           ${{ inputs.EXTENDED_CONFIGURATION }}
 
         master:
+          terminationGracePeriodSeconds: ${{ inputs.REDIS_TERMINATION_GRACE_PERIOD }}
           persistence:
             enabled: true
             size: ${{ inputs.REDIS_STORAGE_SIZE }}
@@ -166,9 +179,20 @@ runs:
             requests:
               cpu: ${{ inputs.REDIS_CPU_REQUEST }}
               memory: ${{ inputs.REDIS_MEMORY_REQUEST }}
+          lifecycleHooks:
+            preStop:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - redis-cli -a \$REDIS_PASSWORD shutdown save
 
         replica:
           replicaCount: ${{ inputs.REDIS_REPLICA_COUNT }}
+          terminationGracePeriodSeconds: ${{ inputs.REDIS_TERMINATION_GRACE_PERIOD }}
+          configuration: |
+            appendonly ${{ inputs.REDIS_REPLICA_AOF_ENABLED == 'true' && 'yes' || 'no' }}
+            appendfsync ${{ inputs.REDIS_AOF_FSYNC }}
           persistence:
             enabled: true
             size: ${{ inputs.REDIS_STORAGE_SIZE }}
@@ -179,6 +203,13 @@ runs:
             requests:
               cpu: ${{ inputs.REDIS_REPLICA_CPU_REQUEST }}
               memory: ${{ inputs.REDIS_REPLICA_MEMORY_REQUEST }}
+          lifecycleHooks:
+            preStop:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - redis-cli -a \$REDIS_PASSWORD shutdown nosave
         EOF
       shell: bash
 
