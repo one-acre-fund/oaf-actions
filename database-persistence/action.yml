@@ -1,0 +1,251 @@
+name: Database Persistence Manager
+description: Unified GitHub Action for deploying multiple database systems (PostgreSQL, Redis, MongoDB, Couchbase)
+author: orchide
+branding:
+  icon: layers
+  color: blue
+inputs:
+  # Common - Required for all
+  NAMESPACE:
+    description: "The namespace to deploy databases to."
+    required: true
+
+  # Kubernetes Context - Optional (assumes set_context already called if not provided)
+  K8S_URL:
+    description: "The URL for the kubernetes cluster. If provided, will call set_context."
+    required: false
+  K8S_SECRET:
+    description: "The secret used to authenticate to the cluster. Required if K8S_URL is provided."
+    required: false
+
+  # Database Selection Flags
+  INSTALL_POSTGRES:
+    description: "Whether to install PostgreSQL."
+    default: "false"
+    required: false
+  INSTALL_REDIS:
+    description: "Whether to install Redis."
+    default: "false"
+    required: false
+  INSTALL_MONGODB:
+    description: "Whether to install MongoDB."
+    default: "false"
+    required: false
+  INSTALL_COUCHBASE:
+    description: "Whether to install Couchbase dependencies."
+    default: "false"
+    required: false
+
+  # Common Configuration
+  IMAGE_PULL_SECRET_NAME:
+    description: "The name of the image pull secret for pulling database images."
+    default: "dockerhub-secret"
+    required: false
+
+  # === PostgreSQL Configuration ===
+  POSTGRES_RELEASE_NAME:
+    description: "The release name for PostgreSQL."
+    default: "db"
+    required: false
+  POSTGRES_DATABASE_NAME:
+    description: "The name of the PostgreSQL database."
+    default: "postgres"
+    required: false
+  POSTGRES_DATABASE_USER:
+    description: "The username for the PostgreSQL database."
+    default: "postgres"
+    required: false
+  POSTGRES_DATABASE_PASSWORD:
+    description: "The password for the PostgreSQL database."
+    required: false
+  POSTGRES_STORAGE_SIZE:
+    description: "The storage size for PostgreSQL."
+    default: "15Gi"
+    required: false
+  POSTGRES_STORAGE_CLASS:
+    description: "The storage class for PostgreSQL."
+    required: false
+  POSTGRES_IMAGE_TAG:
+    description: "The image tag for PostgreSQL."
+    required: false
+  POSTGRES_CPU_LIMIT:
+    description: "The CPU limit for PostgreSQL."
+    default: "2"
+    required: false
+  POSTGRES_MEMORY_LIMIT:
+    description: "The memory limit for PostgreSQL."
+    default: "3Gi"
+    required: false
+
+  # === Redis Configuration ===
+  REDIS_RELEASE_NAME:
+    description: "The release name for Redis."
+    default: "redis"
+    required: false
+  REDIS_ARCHITECTURE:
+    description: "Redis architecture: standalone or replication."
+    default: "standalone"
+    required: false
+  REDIS_PASSWORD:
+    description: "The password for Redis."
+    required: false
+  REDIS_STORAGE_SIZE:
+    description: "The storage size for Redis."
+    default: "8Gi"
+    required: false
+  REDIS_STORAGE_CLASS:
+    description: "The storage class for Redis."
+    required: false
+  REDIS_REPLICA_COUNT:
+    description: "Number of Redis replicas (replication mode only)."
+    default: "3"
+    required: false
+  REDIS_CPU_LIMIT:
+    description: "The CPU limit for Redis."
+    default: "1"
+    required: false
+  REDIS_MEMORY_LIMIT:
+    description: "The memory limit for Redis."
+    default: "1Gi"
+    required: false
+
+  # === MongoDB Configuration ===
+  MONGODB_RELEASE_NAME:
+    description: "The release name for MongoDB."
+    default: "mongodb"
+    required: false
+  MONGODB_ARCHITECTURE:
+    description: "MongoDB architecture: standalone or replicaset."
+    default: "standalone"
+    required: false
+  MONGODB_ROOT_PASSWORD:
+    description: "The root password for MongoDB."
+    required: false
+  MONGODB_STORAGE_SIZE:
+    description: "The storage size for MongoDB."
+    default: "8Gi"
+    required: false
+  MONGODB_STORAGE_CLASS:
+    description: "The storage class for MongoDB."
+    required: false
+  MONGODB_REPLICA_COUNT:
+    description: "Number of MongoDB replicas (replicaset mode only)."
+    default: "3"
+    required: false
+  MONGODB_CPU_LIMIT:
+    description: "The CPU limit for MongoDB."
+    default: "1"
+    required: false
+  MONGODB_MEMORY_LIMIT:
+    description: "The memory limit for MongoDB."
+    default: "2Gi"
+    required: false
+
+  # === Couchbase Configuration ===
+  COUCHBASE_RELEASE_NAME:
+    description: "The release name for Couchbase."
+    default: "couchbase-deps"
+    required: false
+  COUCHBASE_CLUSTER:
+    description: "The Couchbase cluster name."
+    default: "couchbase-cluster"
+    required: false
+  COUCHBASE_USERNAME:
+    description: "The username for Couchbase."
+    default: "Administrator"
+    required: false
+  COUCHBASE_PASSWORD:
+    description: "The password for Couchbase."
+    required: false
+  COUCHBASE_BUCKET_NAME:
+    description: "The name of the Couchbase bucket."
+    default: "default"
+    required: false
+  COUCHBASE_BUCKET_SIZE:
+    description: "The size of the Couchbase bucket (in MB)."
+    default: "1024"
+    required: false
+  ACR_PULL_USERNAME:
+    description: "Azure Container Registry username (required for Couchbase)."
+    required: false
+  ACR_PULL_PASSWORD:
+    description: "Azure Container Registry password (required for Couchbase)."
+    required: false
+
+runs:
+  using: composite
+  steps:
+    # Step 1: Conditionally set Kubernetes context if credentials provided
+    - name: Set Kubernetes Context
+      if: ${{ inputs.K8S_URL != '' }}
+      uses: ./set_context
+      with:
+        K8S_URL: ${{ inputs.K8S_URL }}
+        K8S_SECRET: ${{ inputs.K8S_SECRET }}
+
+    # Step 2: Deploy PostgreSQL
+    - name: Deploy PostgreSQL
+      if: ${{ inputs.INSTALL_POSTGRES == 'true' }}
+      uses: ./db
+      with:
+        NAMESPACE: ${{ inputs.NAMESPACE }}
+        RELEASE_NAME: ${{ inputs.POSTGRES_RELEASE_NAME }}
+        INSTALL_POSTGRES: "true"
+        IMAGE_PULL_SECRET_NAME: ${{ inputs.IMAGE_PULL_SECRET_NAME }}
+        POSTGRES_DATABASE_NAME: ${{ inputs.POSTGRES_DATABASE_NAME }}
+        POSTGRES_DATABASE_USER: ${{ inputs.POSTGRES_DATABASE_USER }}
+        POSTGRES_DATABASE_PASSWORD: ${{ inputs.POSTGRES_DATABASE_PASSWORD }}
+        POSTGRES_STORAGE_SIZE: ${{ inputs.POSTGRES_STORAGE_SIZE }}
+        POSTGRES_STORAGE_CLASS: ${{ inputs.POSTGRES_STORAGE_CLASS }}
+        POSTGRES_IMAGE_TAG: ${{ inputs.POSTGRES_IMAGE_TAG }}
+        POSTGRES_CPU_LIMIT: ${{ inputs.POSTGRES_CPU_LIMIT }}
+        POSTGRES_MEMORY_LIMIT: ${{ inputs.POSTGRES_MEMORY_LIMIT }}
+
+    # Step 3: Deploy Redis
+    - name: Deploy Redis
+      if: ${{ inputs.INSTALL_REDIS == 'true' }}
+      uses: ./redis
+      with:
+        NAMESPACE: ${{ inputs.NAMESPACE }}
+        RELEASE_NAME: ${{ inputs.REDIS_RELEASE_NAME }}
+        INSTALL_REDIS: "true"
+        IMAGE_PULL_SECRET_NAME: ${{ inputs.IMAGE_PULL_SECRET_NAME }}
+        REDIS_ARCHITECTURE: ${{ inputs.REDIS_ARCHITECTURE }}
+        REDIS_PASSWORD: ${{ inputs.REDIS_PASSWORD }}
+        REDIS_STORAGE_SIZE: ${{ inputs.REDIS_STORAGE_SIZE }}
+        REDIS_STORAGE_CLASS: ${{ inputs.REDIS_STORAGE_CLASS }}
+        REDIS_REPLICA_COUNT: ${{ inputs.REDIS_REPLICA_COUNT }}
+        REDIS_CPU_LIMIT: ${{ inputs.REDIS_CPU_LIMIT }}
+        REDIS_MEMORY_LIMIT: ${{ inputs.REDIS_MEMORY_LIMIT }}
+
+    # Step 4: Deploy MongoDB
+    - name: Deploy MongoDB
+      if: ${{ inputs.INSTALL_MONGODB == 'true' }}
+      uses: ./mongodb
+      with:
+        NAMESPACE: ${{ inputs.NAMESPACE }}
+        RELEASE_NAME: ${{ inputs.MONGODB_RELEASE_NAME }}
+        INSTALL_MONGODB: "true"
+        IMAGE_PULL_SECRET_NAME: ${{ inputs.IMAGE_PULL_SECRET_NAME }}
+        MONGODB_ARCHITECTURE: ${{ inputs.MONGODB_ARCHITECTURE }}
+        MONGODB_ROOT_PASSWORD: ${{ inputs.MONGODB_ROOT_PASSWORD }}
+        MONGODB_STORAGE_SIZE: ${{ inputs.MONGODB_STORAGE_SIZE }}
+        MONGODB_STORAGE_CLASS: ${{ inputs.MONGODB_STORAGE_CLASS }}
+        MONGODB_REPLICA_COUNT: ${{ inputs.MONGODB_REPLICA_COUNT }}
+        MONGODB_CPU_LIMIT: ${{ inputs.MONGODB_CPU_LIMIT }}
+        MONGODB_MEMORY_LIMIT: ${{ inputs.MONGODB_MEMORY_LIMIT }}
+
+    # Step 5: Deploy Couchbase
+    - name: Deploy Couchbase Dependencies
+      if: ${{ inputs.INSTALL_COUCHBASE == 'true' }}
+      uses: ./couchbase_dependencies
+      with:
+        NAMESPACE: ${{ inputs.NAMESPACE }}
+        RELEASE_NAME: ${{ inputs.COUCHBASE_RELEASE_NAME }}
+        COUCHBASE_CLUSTER: ${{ inputs.COUCHBASE_CLUSTER }}
+        COUCHBASE_USERNAME: ${{ inputs.COUCHBASE_USERNAME }}
+        COUCHBASE_PASSWORD: ${{ inputs.COUCHBASE_PASSWORD }}
+        BUCKET_NAME: ${{ inputs.COUCHBASE_BUCKET_NAME }}
+        BUCKET_SIZE: ${{ inputs.COUCHBASE_BUCKET_SIZE }}
+        ACR_PULL_USERNAME: ${{ inputs.ACR_PULL_USERNAME }}
+        ACR_PULL_PASSWORD: ${{ inputs.ACR_PULL_PASSWORD }}
