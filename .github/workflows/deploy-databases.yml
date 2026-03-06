@@ -1,0 +1,234 @@
+name: Deploy Databases
+
+on:
+  workflow_dispatch:
+    inputs:
+      cluster:
+        description: 'Kubernetes cluster to deploy to'
+        required: true
+        type: choice
+        options:
+          - test
+          - qa
+          - uat
+      namespace:
+        description: 'Kubernetes namespace to deploy to'
+        required: true
+        type: string
+
+      # Database Selection
+      install_postgres:
+        description: 'Install PostgreSQL'
+        required: false
+        type: boolean
+        default: false
+      install_redis:
+        description: 'Install Redis'
+        required: false
+        type: boolean
+        default: false
+      install_mongodb:
+        description: 'Install MongoDB'
+        required: false
+        type: boolean
+        default: false
+      install_couchbase:
+        description: 'Install Couchbase'
+        required: false
+        type: boolean
+        default: false
+
+      # PostgreSQL Configuration
+      postgres_release_name:
+        description: 'PostgreSQL release name'
+        required: false
+        type: string
+        default: 'db'
+      postgres_database_name:
+        description: 'PostgreSQL database name'
+        required: false
+        type: string
+        default: 'postgres'
+      postgres_database_user:
+        description: 'PostgreSQL database user'
+        required: false
+        type: string
+        default: 'postgres'
+      postgres_storage_size:
+        description: 'PostgreSQL storage size'
+        required: false
+        type: string
+        default: '15Gi'
+      postgres_storage_class:
+        description: 'PostgreSQL storage class'
+        required: false
+        type: string
+        default: ''
+
+      # Redis Configuration
+      redis_release_name:
+        description: 'Redis release name'
+        required: false
+        type: string
+        default: 'redis'
+      redis_architecture:
+        description: 'Redis architecture'
+        required: false
+        type: choice
+        options:
+          - standalone
+          - replication
+        default: standalone
+      redis_storage_size:
+        description: 'Redis storage size'
+        required: false
+        type: string
+        default: '8Gi'
+      redis_storage_class:
+        description: 'Redis storage class'
+        required: false
+        type: string
+        default: ''
+      redis_replica_count:
+        description: 'Redis replica count (for replication mode)'
+        required: false
+        type: string
+        default: '3'
+
+      # MongoDB Configuration
+      mongodb_release_name:
+        description: 'MongoDB release name'
+        required: false
+        type: string
+        default: 'mongodb'
+      mongodb_architecture:
+        description: 'MongoDB architecture'
+        required: false
+        type: choice
+        options:
+          - standalone
+          - replicaset
+        default: standalone
+      mongodb_storage_size:
+        description: 'MongoDB storage size'
+        required: false
+        type: string
+        default: '8Gi'
+      mongodb_storage_class:
+        description: 'MongoDB storage class'
+        required: false
+        type: string
+        default: ''
+      mongodb_replica_count:
+        description: 'MongoDB replica count (for replicaset mode)'
+        required: false
+        type: string
+        default: '3'
+
+      # Couchbase Configuration
+      couchbase_release_name:
+        description: 'Couchbase release name'
+        required: false
+        type: string
+        default: 'couchbase-deps'
+      couchbase_cluster:
+        description: 'Couchbase cluster name'
+        required: false
+        type: string
+        default: 'couchbase-cluster'
+      couchbase_bucket_name:
+        description: 'Couchbase bucket name'
+        required: false
+        type: string
+        default: 'default'
+      couchbase_bucket_size:
+        description: 'Couchbase bucket size (MB)'
+        required: false
+        type: string
+        default: '1024'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      K8S_URL: ${{ inputs.cluster == 'test' && secrets.K8S_TEST_URL || (inputs.cluster == 'qa' && secrets.K8S_QA_URL || secrets.K8S_UAT_URL) }}
+      K8S_AUTH_SECRET: ${{ inputs.cluster == 'test' && secrets.K8S_TEST_DEFAULT || (inputs.cluster == 'qa' && secrets.K8S_QA_DEFAULT || secrets.K8S_UAT_DEFAULT) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set Kubernetes Context
+        uses: ./set_context
+        with:
+          K8S_URL: ${{ env.K8S_URL }}
+          K8S_SECRET: ${{ env.K8S_AUTH_SECRET }}
+
+      - name: Deploy Databases
+        uses: ./database-persistence
+        with:
+          NAMESPACE: ${{ inputs.namespace }}
+
+          # Database Selection
+          INSTALL_POSTGRES: ${{ inputs.install_postgres }}
+          INSTALL_REDIS: ${{ inputs.install_redis }}
+          INSTALL_MONGODB: ${{ inputs.install_mongodb }}
+          INSTALL_COUCHBASE: ${{ inputs.install_couchbase }}
+
+          # PostgreSQL Configuration
+          POSTGRES_RELEASE_NAME: ${{ inputs.postgres_release_name }}
+          POSTGRES_DATABASE_NAME: ${{ inputs.postgres_database_name }}
+          POSTGRES_DATABASE_USER: ${{ inputs.postgres_database_user }}
+          POSTGRES_DATABASE_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_STORAGE_SIZE: ${{ inputs.postgres_storage_size }}
+          POSTGRES_STORAGE_CLASS: ${{ inputs.postgres_storage_class }}
+
+          # Redis Configuration
+          REDIS_RELEASE_NAME: ${{ inputs.redis_release_name }}
+          REDIS_ARCHITECTURE: ${{ inputs.redis_architecture }}
+          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+          REDIS_STORAGE_SIZE: ${{ inputs.redis_storage_size }}
+          REDIS_STORAGE_CLASS: ${{ inputs.redis_storage_class }}
+          REDIS_REPLICA_COUNT: ${{ inputs.redis_replica_count }}
+
+          # MongoDB Configuration
+          MONGODB_RELEASE_NAME: ${{ inputs.mongodb_release_name }}
+          MONGODB_ARCHITECTURE: ${{ inputs.mongodb_architecture }}
+          MONGODB_ROOT_PASSWORD: ${{ secrets.MONGODB_ROOT_PASSWORD }}
+          MONGODB_STORAGE_SIZE: ${{ inputs.mongodb_storage_size }}
+          MONGODB_STORAGE_CLASS: ${{ inputs.mongodb_storage_class }}
+          MONGODB_REPLICA_COUNT: ${{ inputs.mongodb_replica_count }}
+
+          # Couchbase Configuration
+          COUCHBASE_RELEASE_NAME: ${{ inputs.couchbase_release_name }}
+          COUCHBASE_CLUSTER: ${{ inputs.couchbase_cluster }}
+          COUCHBASE_USERNAME: Administrator
+          COUCHBASE_PASSWORD: ${{ secrets.COUCHBASE_PASSWORD }}
+          COUCHBASE_BUCKET_NAME: ${{ inputs.couchbase_bucket_name }}
+          COUCHBASE_BUCKET_SIZE: ${{ inputs.couchbase_bucket_size }}
+          ACR_PULL_USERNAME: ${{ secrets.ACR_PULL_USERNAME }}
+          ACR_PULL_PASSWORD: ${{ secrets.ACR_PULL_PASSWORD }}
+
+      - name: Deployment Summary
+        run: |
+          echo "## Database Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Cluster:** ${{ inputs.cluster }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Namespace:** ${{ inputs.namespace }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployed Databases:" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ inputs.install_postgres }}" == "true" ]; then
+            echo "- ✅ PostgreSQL (Release: ${{ inputs.postgres_release_name }})" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ inputs.install_redis }}" == "true" ]; then
+            echo "- ✅ Redis (Release: ${{ inputs.redis_release_name }}, Architecture: ${{ inputs.redis_architecture }})" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ inputs.install_mongodb }}" == "true" ]; then
+            echo "- ✅ MongoDB (Release: ${{ inputs.mongodb_release_name }}, Architecture: ${{ inputs.mongodb_architecture }})" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ inputs.install_couchbase }}" == "true" ]; then
+            echo "- ✅ Couchbase (Release: ${{ inputs.couchbase_release_name }})" >> $GITHUB_STEP_SUMMARY
+          fi
