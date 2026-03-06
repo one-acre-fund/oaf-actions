@@ -15,8 +15,8 @@ After deployment, connection information including credentials, service details,
 | `INSTALL_MONGODB` | Whether to install MongoDB or not. | `true` | `false` |
 | `IMAGE_PULL_SECRET_NAME` | The name of the image pull secret. | `false` | `dockerhub-secret` |
 | `MONGODB_ARCHITECTURE` | MongoDB architecture: standalone or replicaset. | `false` | `standalone` |
-| `MONGODB_IMAGE_REPOSITORY` | The image repository for the MongoDB server. | `false` | `bitnami/mongodb` |
-| `MONGODB_IMAGE_TAG` | The image tag for the MongoDB server. | `false` | `8.0` |
+| `MONGODB_IMAGE_REPOSITORY` | The image repository for the MongoDB server. | `false` | `docker.io/bitnamilegacy/mongodb` |
+| `MONGODB_IMAGE_TAG` | The image tag for the MongoDB server. | `false` | `6.0.10-debian-11-r8` |
 | `MONGODB_IMAGE_DIGEST` | Optional: Image digest (sha256:...). If set, takes precedence over tag. | `false` | `""` |
 | `MONGODB_ROOT_PASSWORD` | The root password for the MongoDB server. | `true` | `""` |
 | `MONGODB_ROOT_USER` | The root username for the MongoDB server. | `false` | `root` |

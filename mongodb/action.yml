@@ -30,11 +30,11 @@ inputs:
   # Image settings
   MONGODB_IMAGE_REPOSITORY:
     description: "The image repository for the MongoDB server."
-    default: "bitnami/mongodb"
+    default: "docker.io/bitnamilegacy/mongodb"
     required: false
   MONGODB_IMAGE_TAG:
     description: "The image tag for the MongoDB server."
-    default: "8.0"
+    default: "6.0.10-debian-11-r8"
     required: false
   MONGODB_IMAGE_DIGEST:
     description: "Optional: The image digest for the MongoDB server (sha256:...). If set, this takes precedence over tag."
@@ -121,6 +121,7 @@ runs:
         image:
           repository: ${{ inputs.MONGODB_IMAGE_REPOSITORY }}
           ${{ inputs.MONGODB_IMAGE_DIGEST != '' && format('digest: {0}', inputs.MONGODB_IMAGE_DIGEST) || format('tag: {0}', inputs.MONGODB_IMAGE_TAG) }}
+          debug: false
 
         auth:
           enabled: true
@@ -133,6 +134,10 @@ runs:
 
         replicaSetName: ${{ inputs.MONGODB_REPLICA_SET_NAME }}
         replicaCount: ${{ inputs.MONGODB_REPLICA_COUNT }}
+
+        useStatefulSet: true
+
+        configuration: ""
 
         persistence:
           enabled: true
@@ -161,8 +166,10 @@ runs:
         else
           echo "MongoDB installation is enabled. Proceeding with deployment."
           helm repo add bitnami https://charts.bitnami.com/bitnami
+          helm repo update
           helm upgrade --install -n ${{ inputs.NAMESPACE }} \
             --values ${{ github.workspace }}/mongodb-values.yaml \
+            --version 13.18.5 \
             --debug \
             --wait \
             --timeout 5m \
