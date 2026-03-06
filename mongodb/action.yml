@@ -30,15 +30,14 @@ inputs:
   # Image settings
   MONGODB_IMAGE_REPOSITORY:
     description: "The image repository for the MongoDB server."
-    default: "bitnamilegacy/mongodb"
-    required: false
-  MONGODB_IMAGE_DIGEST:
-    description: "The image digest for the MongoDB server (sha256:...)."
-    default: "sha256:75c5d322fd11bb10a0e4ddebf4ab312aa9ec2bbcf2b64986f7d87127483e2b14"
+    default: "bitnami/mongodb"
     required: false
   MONGODB_IMAGE_TAG:
-    description: "The image tag for the MongoDB server. Only used if MONGODB_IMAGE_DIGEST is not set."
+    description: "The image tag for the MongoDB server."
     default: "8.0"
+    required: false
+  MONGODB_IMAGE_DIGEST:
+    description: "Optional: The image digest for the MongoDB server (sha256:...). If set, this takes precedence over tag."
     required: false
 
   # Authentication
@@ -121,7 +120,7 @@ runs:
 
         image:
           repository: ${{ inputs.MONGODB_IMAGE_REPOSITORY }}
-          digest: ${{ inputs.MONGODB_IMAGE_DIGEST }}
+          ${{ inputs.MONGODB_IMAGE_DIGEST != '' && format('digest: {0}', inputs.MONGODB_IMAGE_DIGEST) || format('tag: {0}', inputs.MONGODB_IMAGE_TAG) }}
 
         auth:
           enabled: true
@@ -168,5 +167,59 @@ runs:
             --wait \
             --timeout 5m \
             ${{ inputs.RELEASE_NAME }} bitnami/mongodb
+        fi
+      shell: bash
+
+    - name: MongoDB Connection Info
+      if: ${{ inputs.INSTALL_MONGODB == 'true' }}
+      run: |
+        echo "## MongoDB Connection Information" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Release Name:** \`${{ inputs.RELEASE_NAME }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "**Namespace:** \`${{ inputs.NAMESPACE }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "**Architecture:** \`${{ inputs.MONGODB_ARCHITECTURE }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Credentials" >> $GITHUB_STEP_SUMMARY
+        echo "- **Root Username:** \`${{ inputs.MONGODB_ROOT_USER }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **Root Password:** \`<value from MONGODB_ROOT_PASSWORD input>\`" >> $GITHUB_STEP_SUMMARY
+
+        if [ -n "${{ inputs.MONGODB_USERNAME }}" ]; then
+          echo "- **Custom Username:** \`${{ inputs.MONGODB_USERNAME }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Custom Password:** \`<value from MONGODB_PASSWORD input>\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Custom Database:** \`${{ inputs.MONGODB_DATABASE }}\`" >> $GITHUB_STEP_SUMMARY
+        fi
+
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Connection Commands" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "#### Get MongoDB Service" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+        echo "kubectl get svc -n ${{ inputs.NAMESPACE }} | grep ${{ inputs.RELEASE_NAME }}" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "#### Connect from within cluster" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+        echo "kubectl run -it --rm mongodb-client --image=bitnami/mongodb:8.0 --restart=Never -n ${{ inputs.NAMESPACE }} -- \\" >> $GITHUB_STEP_SUMMARY
+        echo "  mongosh mongodb://${{ inputs.MONGODB_ROOT_USER }}:<PASSWORD>@${{ inputs.RELEASE_NAME }}:27017" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "#### Port-forward for local access" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+        echo "kubectl port-forward svc/${{ inputs.RELEASE_NAME }} -n ${{ inputs.NAMESPACE }} 27017:27017" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "# Then connect locally:" >> $GITHUB_STEP_SUMMARY
+        echo "mongosh mongodb://${{ inputs.MONGODB_ROOT_USER }}:<PASSWORD>@localhost:27017" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "#### Connection String Format" >> $GITHUB_STEP_SUMMARY
+
+        if [ "${{ inputs.MONGODB_ARCHITECTURE }}" == "replicaset" ]; then
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "mongodb://${{ inputs.MONGODB_ROOT_USER }}:<PASSWORD>@${{ inputs.RELEASE_NAME }}-0.${{ inputs.RELEASE_NAME }}-headless:27017,${{ inputs.RELEASE_NAME }}-1.${{ inputs.RELEASE_NAME }}-headless:27017,${{ inputs.RELEASE_NAME }}-2.${{ inputs.RELEASE_NAME }}-headless:27017/?replicaSet=${{ inputs.MONGODB_REPLICA_SET_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "mongodb://${{ inputs.MONGODB_ROOT_USER }}:<PASSWORD>@${{ inputs.RELEASE_NAME }}:27017" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
         fi
       shell: bash

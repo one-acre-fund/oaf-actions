@@ -4,7 +4,7 @@
 
 GitHub Action for deploying production-grade MongoDB with Helm. Supports authentication, standalone or replicaset architectures, and customizable resource allocation.
 
-**Note:** By default, this action uses an image digest instead of a tag to ensure you always get the exact same image, even if the bitnamilegacy repository is discontinued or modified.
+After deployment, connection information including credentials, service details, and example connection commands are automatically added to the GitHub Actions summary.
 
 ### Inputs
 
@@ -15,9 +15,9 @@ GitHub Action for deploying production-grade MongoDB with Helm. Supports authent
 | `INSTALL_MONGODB` | Whether to install MongoDB or not. | `true` | `false` |
 | `IMAGE_PULL_SECRET_NAME` | The name of the image pull secret. | `false` | `dockerhub-secret` |
 | `MONGODB_ARCHITECTURE` | MongoDB architecture: standalone or replicaset. | `false` | `standalone` |
-| `MONGODB_IMAGE_REPOSITORY` | The image repository for the MongoDB server. | `false` | `bitnamilegacy/mongodb` |
-| `MONGODB_IMAGE_DIGEST` | The image digest for the MongoDB server (sha256:...). | `false` | `sha256:75c5d322fd11bb10a0e4ddebf4ab312aa9ec2bbcf2b64986f7d87127483e2b14` |
-| `MONGODB_IMAGE_TAG` | The image tag (only used if MONGODB_IMAGE_DIGEST is not set). | `false` | `8.0` |
+| `MONGODB_IMAGE_REPOSITORY` | The image repository for the MongoDB server. | `false` | `bitnami/mongodb` |
+| `MONGODB_IMAGE_TAG` | The image tag for the MongoDB server. | `false` | `8.0` |
+| `MONGODB_IMAGE_DIGEST` | Optional: Image digest (sha256:...). If set, takes precedence over tag. | `false` | `""` |
 | `MONGODB_ROOT_PASSWORD` | The root password for the MongoDB server. | `true` | `""` |
 | `MONGODB_ROOT_USER` | The root username for the MongoDB server. | `false` | `root` |
 | `MONGODB_USERNAME` | Optional custom username for MongoDB. | `false` | `""` |
@@ -124,21 +124,19 @@ This action is a `composite` action.
     # The image repository for the MongoDB server.
     #
     # Required: false
-    # Default: bitnamilegacy/mongodb
-
-    MONGODB_IMAGE_DIGEST:
-    # The image digest for the MongoDB server (sha256:...).
-    # When set, this takes precedence over MONGODB_IMAGE_TAG.
-    #
-    # Required: false
-    # Default: sha256:75c5d322fd11bb10a0e4ddebf4ab312aa9ec2bbcf2b64986f7d87127483e2b14
+    # Default: bitnami/mongodb
 
     MONGODB_IMAGE_TAG:
     # The image tag for the MongoDB server.
-    # Only used if MONGODB_IMAGE_DIGEST is not set.
     #
     # Required: false
     # Default: 8.0
+
+    MONGODB_IMAGE_DIGEST:
+    # Optional: The image digest for the MongoDB server (sha256:...).
+    # When set, this takes precedence over MONGODB_IMAGE_TAG.
+    #
+    # Required: false
 
     MONGODB_ROOT_PASSWORD:
     # The root password for the MongoDB server.
