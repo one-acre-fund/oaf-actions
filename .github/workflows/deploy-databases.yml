@@ -150,6 +150,9 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      K8S_URL: ${{ inputs.cluster == 'test' && secrets.K8S_TEST_URL || (inputs.cluster == 'qa' && secrets.K8S_QA_URL || secrets.K8S_UAT_URL) }}
+      K8S_AUTH_SECRET: ${{ inputs.cluster == 'test' && secrets.K8S_TEST_DEFAULT || (inputs.cluster == 'qa' && secrets.K8S_QA_DEFAULT || secrets.K8S_UAT_DEFAULT) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -157,8 +160,8 @@ jobs:
       - name: Set Kubernetes Context
         uses: ./set_context
         with:
-          K8S_URL: ${{ inputs.cluster == 'test' && secrets.K8S_TEST_URL || (inputs.cluster == 'qa' && secrets.K8S_QA_URL || secrets.K8S_UAT_URL) }}
-          K8S_SECRET: ${{ inputs.cluster == 'test' && secrets.K8S_TEST_DEFAULT || (inputs.cluster == 'qa' && secrets.K8S_QA_DEFAULT || secrets.K8S_UAT_DEFAULT) }}
+          K8S_URL: ${{ env.K8S_URL }}
+          K8S_SECRET: ${{ env.K8S_AUTH_SECRET }}
 
       - name: Deploy Databases
         uses: ./database-persistence

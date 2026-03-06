@@ -4,6 +4,8 @@
 
 GitHub Action for deploying production-grade MongoDB with Helm. Supports authentication, standalone or replicaset architectures, and customizable resource allocation.
 
+**Note:** By default, this action uses an image digest instead of a tag to ensure you always get the exact same image, even if the bitnamilegacy repository is discontinued or modified.
+
 ### Inputs
 
 | name | description | required | default |
@@ -14,7 +16,8 @@ GitHub Action for deploying production-grade MongoDB with Helm. Supports authent
 | `IMAGE_PULL_SECRET_NAME` | The name of the image pull secret. | `false` | `dockerhub-secret` |
 | `MONGODB_ARCHITECTURE` | MongoDB architecture: standalone or replicaset. | `false` | `standalone` |
 | `MONGODB_IMAGE_REPOSITORY` | The image repository for the MongoDB server. | `false` | `bitnamilegacy/mongodb` |
-| `MONGODB_IMAGE_TAG` | The image tag for the MongoDB server. | `false` | `8.0` |
+| `MONGODB_IMAGE_DIGEST` | The image digest for the MongoDB server (sha256:...). | `false` | `sha256:75c5d322fd11bb10a0e4ddebf4ab312aa9ec2bbcf2b64986f7d87127483e2b14` |
+| `MONGODB_IMAGE_TAG` | The image tag (only used if MONGODB_IMAGE_DIGEST is not set). | `false` | `8.0` |
 | `MONGODB_ROOT_PASSWORD` | The root password for the MongoDB server. | `true` | `""` |
 | `MONGODB_ROOT_USER` | The root username for the MongoDB server. | `false` | `root` |
 | `MONGODB_USERNAME` | Optional custom username for MongoDB. | `false` | `""` |
@@ -123,8 +126,16 @@ This action is a `composite` action.
     # Required: false
     # Default: bitnamilegacy/mongodb
 
+    MONGODB_IMAGE_DIGEST:
+    # The image digest for the MongoDB server (sha256:...).
+    # When set, this takes precedence over MONGODB_IMAGE_TAG.
+    #
+    # Required: false
+    # Default: sha256:75c5d322fd11bb10a0e4ddebf4ab312aa9ec2bbcf2b64986f7d87127483e2b14
+
     MONGODB_IMAGE_TAG:
     # The image tag for the MongoDB server.
+    # Only used if MONGODB_IMAGE_DIGEST is not set.
     #
     # Required: false
     # Default: 8.0

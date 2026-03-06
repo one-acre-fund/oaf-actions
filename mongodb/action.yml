@@ -32,8 +32,12 @@ inputs:
     description: "The image repository for the MongoDB server."
     default: "bitnamilegacy/mongodb"
     required: false
+  MONGODB_IMAGE_DIGEST:
+    description: "The image digest for the MongoDB server (sha256:...)."
+    default: "sha256:75c5d322fd11bb10a0e4ddebf4ab312aa9ec2bbcf2b64986f7d87127483e2b14"
+    required: false
   MONGODB_IMAGE_TAG:
-    description: "The image tag for the MongoDB server."
+    description: "The image tag for the MongoDB server. Only used if MONGODB_IMAGE_DIGEST is not set."
     default: "8.0"
     required: false
 
@@ -117,7 +121,7 @@ runs:
 
         image:
           repository: ${{ inputs.MONGODB_IMAGE_REPOSITORY }}
-          tag: ${{ inputs.MONGODB_IMAGE_TAG }}
+          digest: ${{ inputs.MONGODB_IMAGE_DIGEST }}
 
         auth:
           enabled: true
