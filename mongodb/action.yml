@@ -30,7 +30,7 @@ inputs:
   # Image settings
   MONGODB_IMAGE_REPOSITORY:
     description: "The image repository for the MongoDB server."
-    default: "docker.io/bitnamilegacy/mongodb"
+    default: "bitnamilegacy/mongodb"
     required: false
   MONGODB_IMAGE_TAG:
     description: "The image tag for the MongoDB server."
