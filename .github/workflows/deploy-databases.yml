@@ -4,75 +4,76 @@ on:
   workflow_dispatch:
     inputs:
       cluster:
-        description: 'Kubernetes cluster to deploy to'
+        description: "Kubernetes cluster to deploy to"
         required: true
         type: choice
         options:
           - test
           - qa
           - uat
+          - prod
       namespace:
-        description: 'Kubernetes namespace to deploy to'
+        description: "Kubernetes namespace to deploy to"
         required: true
         type: string
 
       # Database Selection
       install_postgres:
-        description: 'Install PostgreSQL'
+        description: "Install PostgreSQL"
         required: false
         type: boolean
         default: false
       install_redis:
-        description: 'Install Redis'
+        description: "Install Redis"
         required: false
         type: boolean
         default: false
       install_mongodb:
-        description: 'Install MongoDB'
+        description: "Install MongoDB"
         required: false
         type: boolean
         default: false
       install_couchbase:
-        description: 'Install Couchbase'
+        description: "Install Couchbase"
         required: false
         type: boolean
         default: false
 
       # PostgreSQL Configuration
       postgres_release_name:
-        description: 'PostgreSQL release name'
+        description: "PostgreSQL release name"
         required: false
         type: string
-        default: 'db'
+        default: "db"
       postgres_database_name:
-        description: 'PostgreSQL database name'
+        description: "PostgreSQL database name"
         required: false
         type: string
-        default: 'postgres'
+        default: "postgres"
       postgres_database_user:
-        description: 'PostgreSQL database user'
+        description: "PostgreSQL database user"
         required: false
         type: string
-        default: 'postgres'
+        default: "postgres"
       postgres_storage_size:
-        description: 'PostgreSQL storage size'
+        description: "PostgreSQL storage size"
         required: false
         type: string
-        default: '15Gi'
+        default: "15Gi"
       postgres_storage_class:
-        description: 'PostgreSQL storage class'
+        description: "PostgreSQL storage class"
         required: false
         type: string
-        default: ''
+        default: ""
 
       # Redis Configuration
       redis_release_name:
-        description: 'Redis release name'
+        description: "Redis release name"
         required: false
         type: string
-        default: 'redis'
+        default: "redis"
       redis_architecture:
-        description: 'Redis architecture'
+        description: "Redis architecture"
         required: false
         type: choice
         options:
@@ -80,29 +81,29 @@ on:
           - replication
         default: standalone
       redis_storage_size:
-        description: 'Redis storage size'
+        description: "Redis storage size"
         required: false
         type: string
-        default: '8Gi'
+        default: "8Gi"
       redis_storage_class:
-        description: 'Redis storage class'
+        description: "Redis storage class"
         required: false
         type: string
-        default: ''
+        default: ""
       redis_replica_count:
-        description: 'Redis replica count (for replication mode)'
+        description: "Redis replica count (for replication mode)"
         required: false
         type: string
-        default: '3'
+        default: "3"
 
       # MongoDB Configuration
       mongodb_release_name:
-        description: 'MongoDB release name'
+        description: "MongoDB release name"
         required: false
         type: string
-        default: 'mongodb'
+        default: "mongodb"
       mongodb_architecture:
-        description: 'MongoDB architecture'
+        description: "MongoDB architecture"
         required: false
         type: choice
         options:
@@ -110,49 +111,49 @@ on:
           - replicaset
         default: standalone
       mongodb_storage_size:
-        description: 'MongoDB storage size'
+        description: "MongoDB storage size"
         required: false
         type: string
-        default: '8Gi'
+        default: "8Gi"
       mongodb_storage_class:
-        description: 'MongoDB storage class'
+        description: "MongoDB storage class"
         required: false
         type: string
-        default: ''
+        default: ""
       mongodb_replica_count:
-        description: 'MongoDB replica count (for replicaset mode)'
+        description: "MongoDB replica count (for replicaset mode)"
         required: false
         type: string
-        default: '3'
+        default: "3"
 
       # Couchbase Configuration
       couchbase_release_name:
-        description: 'Couchbase release name'
+        description: "Couchbase release name"
         required: false
         type: string
-        default: 'couchbase-deps'
+        default: "couchbase-deps"
       couchbase_cluster:
-        description: 'Couchbase cluster name'
+        description: "Couchbase cluster name"
         required: false
         type: string
-        default: 'couchbase-cluster'
+        default: "couchbase-cluster"
       couchbase_bucket_name:
-        description: 'Couchbase bucket name'
+        description: "Couchbase bucket name"
         required: false
         type: string
-        default: 'default'
+        default: "default"
       couchbase_bucket_size:
-        description: 'Couchbase bucket size (MB)'
+        description: "Couchbase bucket size (MB)"
         required: false
         type: string
-        default: '1024'
+        default: "1024"
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      K8S_URL: ${{ inputs.cluster == 'test' && secrets.K8S_TEST_URL || (inputs.cluster == 'qa' && secrets.K8S_QA_URL || secrets.K8S_UAT_URL) }}
-      K8S_AUTH_SECRET: ${{ inputs.cluster == 'test' && secrets.K8S_TEST_DEFAULT || (inputs.cluster == 'qa' && secrets.K8S_QA_DEFAULT || secrets.K8S_UAT_DEFAULT) }}
+      K8S_URL: ${{ inputs.cluster == 'test' && secrets.K8S_TEST_URL || (inputs.cluster == 'qa' && secrets.K8S_QA_URL || (inputs.cluster == 'uat' && secrets.K8S_UAT_URL || secrets.K8S_PROD_URL)) }}
+      K8S_AUTH_SECRET: ${{ inputs.cluster == 'test' && secrets.K8S_TEST_DEFAULT || (inputs.cluster == 'qa' && secrets.K8S_QA_DEFAULT || (inputs.cluster == 'uat' && secrets.K8S_UAT_DEFAULT || secrets.K8S_PROD_DEFAULT)) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
