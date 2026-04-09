@@ -71,6 +71,10 @@ inputs:
     description: "Maximum memory Redis can use (e.g., 256mb, 1gb). Leave empty for no limit."
     default: ""
     required: false
+  REDIS_MAXMEMORY_SAMPLES:
+    description: "Number of keys to sample for LRU/LFU eviction. Higher values are more accurate but slower. Default is 5."
+    default: "5"
+    required: false
 
   # Storage
   REDIS_STORAGE_CLASS:
@@ -133,6 +137,12 @@ inputs:
     default: "false"
     required: false
 
+  # AOF Auto-fix
+  REDIS_AOF_AUTO_FIX:
+    description: "Run redis-check-aof --fix on startup to repair corrupted AOF files."
+    default: "false"
+    required: false
+
   # Extended configuration
   EXTENDED_CONFIGURATION:
     description: "Additional Redis configuration parameters (one per line)."
@@ -165,6 +175,7 @@ runs:
           save ${{ inputs.REDIS_RDB_ENABLED == 'true' && '900 1 300 10 60 10000' || '""' }}
           maxmemory-policy ${{ inputs.REDIS_MAXMEMORY_POLICY }}
           ${{ inputs.REDIS_MAXMEMORY != '' && format('maxmemory {0}', inputs.REDIS_MAXMEMORY) || '' }}
+          maxmemory-samples ${{ inputs.REDIS_MAXMEMORY_SAMPLES }}
           ${{ inputs.EXTENDED_CONFIGURATION }}
 
         master:
@@ -213,8 +224,44 @@ runs:
         EOF
       shell: bash
 
+    - name: Add AOF auto-fix init container
+      if: ${{ inputs.REDIS_AOF_AUTO_FIX == 'true' }}
+      run: |
+        # Create init container values file
+        cat <<'INITEOF' > ${{ github.workspace }}/redis-init-values.yaml
+        master:
+          initContainers:
+            - name: aof-fix
+              image: IMAGE_PLACEHOLDER
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -e
+                  AOF_DIR="/data/appendonlydir"
+                  MANIFEST_FILE="$AOF_DIR/appendonly.aof.manifest"
+                  if [ -d "$AOF_DIR" ] && [ -f "$MANIFEST_FILE" ]; then
+                    echo "Running redis-check-aof --fix on AOF files..."
+                    redis-check-aof --fix "$MANIFEST_FILE" <<< "y" || echo "AOF fix completed or no fix needed"
+                  else
+                    echo "No AOF directory or manifest found, skipping fix"
+                  fi
+              volumeMounts:
+                - name: redis-data
+                  mountPath: /data
+        INITEOF
+        # Replace image placeholder
+        sed -i 's|IMAGE_PLACEHOLDER|${{ inputs.REDIS_IMAGE_REPOSITORY }}:${{ inputs.REDIS_IMAGE_TAG }}|' ${{ github.workspace }}/redis-init-values.yaml
+      shell: bash
+
     - name: Check redis-values.yaml
-      run: cat ${{ github.workspace }}/redis-values.yaml
+      run: |
+        echo "=== Main values file ==="
+        cat ${{ github.workspace }}/redis-values.yaml
+        if [ -f "${{ github.workspace }}/redis-init-values.yaml" ]; then
+          echo "=== Init container values file ==="
+          cat ${{ github.workspace }}/redis-init-values.yaml
+        fi
       shell: bash
 
     - name: Deploy Redis
@@ -224,8 +271,15 @@ runs:
         else
           echo "Redis installation is enabled. Proceeding with deployment."
           helm repo add bitnami https://charts.bitnami.com/bitnami
+
+          # Build values files list
+          VALUES_FILES="--values ${{ github.workspace }}/redis-values.yaml"
+          if [ "${{ inputs.REDIS_AOF_AUTO_FIX }}" == "true" ]; then
+            VALUES_FILES="$VALUES_FILES --values ${{ github.workspace }}/redis-init-values.yaml"
+          fi
+
           helm upgrade --install -n ${{ inputs.NAMESPACE }} \
-            --values ${{ github.workspace }}/redis-values.yaml \
+            $VALUES_FILES \
             --debug \
             --wait \
             --timeout 5m \

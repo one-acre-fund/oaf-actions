@@ -33,6 +33,7 @@ GitHub Action for deploying production-grade Redis with Helm. Supports AOF/RDB p
 | `REDIS_REPLICA_MEMORY_LIMIT` | The memory limit for Redis replica nodes. | `false` | `1Gi` |
 | `REDIS_REPLICA_CPU_REQUEST` | The CPU request for Redis replica nodes. | `false` | `500m` |
 | `REDIS_REPLICA_MEMORY_REQUEST` | The memory request for Redis replica nodes. | `false` | `512Mi` |
+| `REDIS_AOF_AUTO_FIX` | Run redis-check-aof --fix on startup to repair corrupted AOF files. | `false` | `false` |
 | `EXTENDED_CONFIGURATION` | Additional Redis configuration parameters (one per line). | `false` | `""` |
 
 ### Eviction Policies
@@ -104,6 +105,22 @@ This action is a `composite` action.
     REDIS_STORAGE_SIZE: 20Gi
     REDIS_CPU_LIMIT: "2"
     REDIS_MEMORY_LIMIT: 2Gi
+```
+
+#### With AOF Auto-Fix (Prevents Corruption Issues)
+
+```yaml
+- uses: one-acre-fund/oaf-actions/redis@main
+  with:
+    NAMESPACE: my-namespace
+    RELEASE_NAME: redis
+    INSTALL_REDIS: "true"
+    REDIS_ARCHITECTURE: replication
+    REDIS_AUTH_ENABLED: "true"
+    REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+    REDIS_AOF_ENABLED: "true"
+    REDIS_AOF_AUTO_FIX: "true"
+    REDIS_STORAGE_SIZE: 20Gi
 ```
 
 #### Without Authentication (Development/Testing)
@@ -270,6 +287,13 @@ This action is a `composite` action.
     #
     # Required: false
     # Default: 512Mi
+
+    REDIS_AOF_AUTO_FIX:
+    # Run redis-check-aof --fix on startup to repair corrupted AOF files.
+    # Useful for preventing Redis startup failures due to AOF corruption.
+    #
+    # Required: false
+    # Default: false
 
     EXTENDED_CONFIGURATION:
     # Additional Redis configuration parameters (one per line).
