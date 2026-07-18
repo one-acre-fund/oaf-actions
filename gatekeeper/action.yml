@@ -32,6 +32,10 @@ inputs:
   ROLE:
     description: "The role required for accessing the upstream service through the proxy."
     required: true
+  PRESERVE_HOST:
+    description: "Forward the original Host header to the upstream instead of the upstream's own host. Needed when the upstream routes on Host (e.g. the KEDA HTTP interceptor)."
+    required: false
+    default: "false"
 
 runs:
   using: composite
@@ -45,6 +49,7 @@ runs:
           secure-cookie: false
           client-id: "${{ inputs.CLIENT_ID }}"
           upstream-url: "${{ inputs.UPSTREAM_URL }}"
+          preserve-host: ${{ inputs.PRESERVE_HOST }}
           encryption-key: "${{ inputs.PROXY_ENCRYPTION_KEY }}"
           redirection-url: "${{ inputs.PROXY_REDIRECTION_URL }}"
           enable-refresh-tokens: true
