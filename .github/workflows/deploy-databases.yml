@@ -180,6 +180,7 @@ jobs:
           POSTGRES_DATABASE_NAME: ${{ inputs.postgres_database_name }}
           POSTGRES_DATABASE_USER: ${{ inputs.postgres_database_user }}
           POSTGRES_DATABASE_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_IMAGE_TAG: "16.4.0-debian-12-r9"
           POSTGRES_STORAGE_SIZE: ${{ inputs.postgres_storage_size }}
           POSTGRES_STORAGE_CLASS: ${{ inputs.postgres_storage_class }}
 
