@@ -36,6 +36,10 @@ inputs:
     description: "Forward the original Host header to the upstream instead of the upstream's own host. Needed when the upstream routes on Host (e.g. the KEDA HTTP interceptor)."
     required: false
     default: "false"
+  CHART_VERSION:
+    description: "gogatekeeper chart version. PINNED by default: the chart was previously unpinned, so deploys silently picked up whatever was latest. Chart 0.1.66 ships gogatekeeper 5.0.0, which rejects the config this action generates -- it refuses `enable-default-deny` alongside an explicit `/*` rule and exits with: `you've enabled default deny and at the same time defined own rules for /*`. 0.1.64 (app 4.9.0) is what every working deployment runs. Do not unpin without testing 5.x config changes."
+    required: false
+    default: "0.1.64"
 
 runs:
   using: composite
@@ -75,9 +79,12 @@ runs:
       run: |-
         helm repo add gogatekeeper https://gogatekeeper.github.io/helm-gogatekeeper
 
+        helm repo update
+
         helm upgrade --install ${{ inputs.RELEASE_NAME }} \
           --values ${{ github.workspace }}/gatekeeper-values.yaml \
           --namespace ${{ inputs.NAMESPACE }} \
+          --version ${{ inputs.CHART_VERSION }} \
           --debug --timeout 5m \
         gogatekeeper/gatekeeper
       shell: bash
