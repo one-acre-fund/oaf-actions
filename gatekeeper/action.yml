@@ -36,12 +36,37 @@ inputs:
     description: "Forward the original Host header to the upstream instead of the upstream's own host. Needed when the upstream routes on Host (e.g. the KEDA HTTP interceptor)."
     required: false
     default: "false"
+  CORS_ORIGINS:
+    description: "Allowed CORS origin, default '*'. MUST be set to the exact calling origin when the upstream sends `Access-Control-Allow-Credentials: true` -- browsers reject a wildcard origin combined with credentials, and this proxy's header would also collide with the one the upstream already sent. Kong Manager calling the Kong Admin API is exactly that case."
+    required: false
+    default: "*"
+  ALLOW_PREFLIGHT:
+    description: "Let unauthenticated CORS preflight (OPTIONS) reach the upstream. Required whenever a browser makes a cross-origin XHR through this proxy: preflight never carries cookies, so the proxy cannot authenticate it and answers 303, which the browser reports as a CORS error. With this on, the upstream answers OPTIONS itself. Leave false for upstreams that are only browsed directly."
+    required: false
+    default: "false"
+  CHART_VERSION:
+    description: "gogatekeeper chart version. PINNED by default: the chart was previously unpinned, so deploys silently picked up whatever was latest. Chart 0.1.66 ships gogatekeeper 5.0.0, which rejects the config this action generates -- it refuses `enable-default-deny` alongside an explicit `/*` rule and exits with: `you've enabled default deny and at the same time defined own rules for /*`. 0.1.64 (app 4.9.0) is what every working deployment runs. Do not unpin without testing 5.x config changes."
+    required: false
+    default: "0.1.64"
 
 runs:
   using: composite
   steps:
     - name: Create values.yaml
       run: |
+        # Preflight rule must come FIRST: gogatekeeper matches resources in order,
+        # so a catch-all `/*` ahead of it would swallow the OPTIONS request.
+        PREFLIGHT_RULE=""
+        if [ "${{ inputs.ALLOW_PREFLIGHT }}" = "true" ]; then
+          PREFLIGHT_RULE=$(cat <<'RULE'
+    - uri: /*
+              methods:
+                - OPTIONS
+              white-listed: true
+RULE
+          )
+        fi
+
         cat <<EOF > ${{ github.workspace }}/gatekeeper-values.yaml
         config:
           client-secret: "${{ inputs.PROXY_CLIENT_SECRET }}"
@@ -59,8 +84,9 @@ runs:
           upstream-response-header-timeout: 360s
           enable-default-deny: false
           cors-origins:
-            - "*"
+            - "${{ inputs.CORS_ORIGINS }}"
           resources:
+        ${PREFLIGHT_RULE}
             - uri: /*
               roles:
                 - ${{ inputs.ROLE }}
@@ -75,9 +101,12 @@ runs:
       run: |-
         helm repo add gogatekeeper https://gogatekeeper.github.io/helm-gogatekeeper
 
+        helm repo update
+
         helm upgrade --install ${{ inputs.RELEASE_NAME }} \
           --values ${{ github.workspace }}/gatekeeper-values.yaml \
           --namespace ${{ inputs.NAMESPACE }} \
+          --version ${{ inputs.CHART_VERSION }} \
           --debug --timeout 5m \
         gogatekeeper/gatekeeper
       shell: bash
