@@ -58,13 +58,13 @@ runs:
         # so a catch-all `/*` ahead of it would swallow the OPTIONS request.
         PREFLIGHT_RULE=""
         if [ "${{ inputs.ALLOW_PREFLIGHT }}" = "true" ]; then
-          PREFLIGHT_RULE=$(cat <<'RULE'
-    - uri: /*
-              methods:
-                - OPTIONS
-              white-listed: true
-RULE
-          )
+          # printf, not a heredoc: a heredoc body/terminator at column 0-4 ends
+          # this YAML block scalar and breaks the whole action manifest.
+          PREFLIGHT_RULE=$(printf '%s\n' \
+            '    - uri: /*' \
+            '      methods:' \
+            '        - OPTIONS' \
+            '      white-listed: true')
         fi
 
         cat <<EOF > ${{ github.workspace }}/gatekeeper-values.yaml
