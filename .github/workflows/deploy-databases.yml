@@ -152,7 +152,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      K8S_URL: ${{ inputs.cluster == 'test' && secrets.K8S_TEST_URL || (inputs.cluster == 'qa' && secrets.K8S_QA_URL || (inputs.cluster == 'uat' && secrets.K8S_UAT_URL || secrets.K8S_PROD_URL)) }}
+      K8S_URL: ${{ inputs.cluster == 'test' && secrets.K8S_TEST_URL || (inputs.cluster == 'qa' && secrets.K8S_QA_URL || (inputs.cluster == 'uat' && secrets.EKS_PROD_DEFAULT || secrets.EKS_PROD_URL)) }}
       K8S_AUTH_SECRET: ${{ inputs.cluster == 'test' && secrets.K8S_TEST_DEFAULT || (inputs.cluster == 'qa' && secrets.K8S_QA_DEFAULT || (inputs.cluster == 'uat' && secrets.K8S_UAT_DEFAULT || secrets.K8S_PROD_DEFAULT)) }}
     steps:
       - name: Checkout repository
